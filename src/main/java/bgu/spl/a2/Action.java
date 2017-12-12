@@ -1,6 +1,8 @@
 package bgu.spl.a2;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * an abstract class that represents an action that may be executed using the
@@ -14,6 +16,16 @@ import java.util.Collection;
  * @param <R> the action result type
  */
 public abstract class Action<R> {
+	
+	private ActorThreadPool pool;
+	private String actorId;
+	private PrivateState actorState;
+	private callback callback;
+	private String actionName;
+	private Promise<R> Result;
+	private AtomicInteger actionRemaining = new AtomicInteger(0);
+	private boolean canBeExecute = false;
+	
 
 	/**
      * start handling the action - note that this method is protected, a thread
@@ -35,6 +47,15 @@ public abstract class Action<R> {
     *
     */
    /*package*/ final void handle(ActorThreadPool pool, String actorId, PrivateState actorState) {
+	   this.pool = pool;
+	   this.actorId = actorId;
+	   this.actorState = actorState;
+	   if (canBeExecute) { // then all the given actions results are resolved
+		   callback.call();
+		   canBeExecute = false;
+	   }else {
+		   this.start();
+	   }	   
    }
     
     
@@ -49,9 +70,17 @@ public abstract class Action<R> {
      * @param callback the callback to execute once all the results are resolved
      */
     protected final void then(Collection<? extends Action<?>> actions, callback callback) {
-       	//TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-   
+    	this.callback = callback;
+    	actionRemaining.set(actions.size());
+   		canBeExecute = true;
+    	if(actionRemaining.get()==0) {//then the callback can be execute
+    		this.sendMessage(this, this.actorId, this.actorState);
+    	}else {
+        	for (Iterator<? extends Action<?>> iterator = actions.iterator(); iterator.hasNext();) {
+    			Action<?> action = (Action<?>) iterator.next();
+    	    	action.getResult().subscribe(()->{this.actionRemainingDecrement();});
+    		}
+    	}
     }
 
     /**
@@ -61,17 +90,15 @@ public abstract class Action<R> {
      * @param result - the action calculated result
      */
     protected final void complete(R result) {
-       	//TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-   
+		this.getResult().resolve(result); //implement choice : we are not warpping this with try&catch to make the flow of the program stop when this error will occur.
+		this.actorState.addRecord(this.actionName);
     }
     
     /**
      * @return action's promise (result)
      */
     public final Promise<R> getResult() {
-    	//TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
+    	return this.Result;
     }
     
     /**
@@ -87,8 +114,8 @@ public abstract class Action<R> {
      * @return promise that will hold the result of the sent action
      */
 	public Promise<?> sendMessage(Action<?> action, String actorId, PrivateState actorState){
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
+		this.pool.submit(action, actorId, actorState);
+		return action.getResult();
 	}
 	
 	/**
@@ -96,15 +123,27 @@ public abstract class Action<R> {
 	 * @param actionName
 	 */
 	public void setActionName(String actionName){
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
+		this.actionName = actionName;
 	}
 	
 	/**
 	 * @return action's name
 	 */
 	public String getActionName(){
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
+		return this.actionName;
 	}
+	
+	/**
+	 * Decrement the current counter for the remaining actions that need to be resolved before calling the callback.
+	 */
+	private void actionRemainingDecrement() {
+		this.actionRemaining.decrementAndGet(); //Atomically decrements by one the current value.
+		if (this.actionRemaining.intValue()==0) {
+			sendMessage(this, this.actorId, this.actorState); // then the callback will be execute
+		}
+	}
+	
+	/*
+	 * End of File
+	 */
 }
