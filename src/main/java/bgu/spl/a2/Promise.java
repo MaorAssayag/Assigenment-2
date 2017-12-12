@@ -1,5 +1,7 @@
 package bgu.spl.a2;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 /**
  * this class represents a deferred result i.e., an object that eventually will
  * be resolved to hold a result of some operation, the class allows for getting
@@ -16,7 +18,10 @@ package bgu.spl.a2;
  *            the result type, <boolean> resolved - initialized ;
  */
 public class Promise<T>{
-
+	private ConcurrentLinkedQueue<callback> callbackList = new ConcurrentLinkedQueue<callback>();
+	private boolean resolved = false;
+	private T value;
+		
 	/**
 	 *
 	 * @return the resolved value if such exists (i.e., if this object has been
@@ -25,9 +30,11 @@ public class Promise<T>{
 	 *             in the case where this method is called and this object is
 	 *             not yet resolved
 	 */
-	public T get() {
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+	public synchronized T get() { //<synchronized>: avoid 2 threads that can check the same promise and change the inner condition for the value.
+		if (!isResolved()) {
+			throw new IllegalStateException("Promise has not been resolved yet !");
+		}
+		return this.value;
 	}
 
 	/**
@@ -37,8 +44,7 @@ public class Promise<T>{
 	 *         before.
 	 */
 	public boolean isResolved() {
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		return this.resolved;
 	}
 
 
@@ -55,9 +61,15 @@ public class Promise<T>{
 	 * @param value
 	 *            - the value to resolve this promise object with
 	 */
-	public void resolve(T value){
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+	public synchronized void resolve(T value){ //<synchronized>: We allow only 1 Thread to change the inner value for promise.
+		if (isResolved()) {
+			throw new IllegalStateException("Promise has already been resolved!");
+		}//else :
+		this.value = value;
+		this.resolved = true;
+		while (!callbackList.isEmpty()) {
+			callbackList.poll().call(); //executed the subscribed callback's
+		}
 	}
 
 	/**
@@ -73,8 +85,11 @@ public class Promise<T>{
 	 * @param callback
 	 *            the callback to be called when the promise object is resolved
 	 */
-	public void subscribe(callback callback) {
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+	public synchronized void subscribe(callback callback) {//<synchronized>: avoid thread that try to subscribe and in the same time another Thread change the inner condition for the value.
+		if (!isResolved()) {
+			callbackList.add(callback);
+		}else {
+			callback.call();
+		}	
 	}
 }
