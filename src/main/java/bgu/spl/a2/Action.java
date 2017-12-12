@@ -26,7 +26,6 @@ public abstract class Action<R> {
 	private AtomicInteger actionRemaining = new AtomicInteger(0);
 	private boolean canBeExecute = false;
 	
-
 	/**
      * start handling the action - note that this method is protected, a thread
      * cannot call it directly.
