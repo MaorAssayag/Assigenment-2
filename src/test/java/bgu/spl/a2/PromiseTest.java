@@ -11,7 +11,7 @@ public class PromiseTest extends TestCase {
 	 */
 	public final void testGet() throws Exception{
 		 try{
-			 int j = 1;///delete this line
+			 int j = 2;///delete this line
 			 
 	        Promise<Integer> p = new Promise<Integer>();
 	        assertEquals(false,p.isResolved());
