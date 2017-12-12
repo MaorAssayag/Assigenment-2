@@ -4,15 +4,12 @@ import junit.framework.TestCase;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PromiseTest extends TestCase {
-//maor was here
 	
 	/**
 	 * @Test 1 - Test Promise class - {@link #get()} function
 	 */
 	public final void testGet() throws Exception{
-		 try{
-			 int j = 2;///delete this line
-			 
+		 try{			 
 	        Promise<Integer> p = new Promise<Integer>();
 	        assertEquals(false,p.isResolved());
 	        //part 1
