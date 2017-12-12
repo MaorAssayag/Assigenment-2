@@ -92,4 +92,8 @@ public class Promise<T>{
 			callback.call();
 		}	
 	}
+	
+	/*
+	 * End of File
+	 */
 }
