@@ -126,31 +126,37 @@ public class ActorThreadPool {
 			t.start(); // Interrupts this thread - maybe.  
 		}
 	}
+	
 	/**
 	 * Thread individual code with the Loop design pattern
+	 * isBusy : if the thread can find an action to execute, it should be busy - false after the action is done handling.
+	 * currentAction : the current action to fetch & handle.
+	 * synchronized : the isTheActorLocked queue for preventing 2 threads trying to handle the same action for the same actor queue.
+	 * 
 	 */
 	private void ThreadCode() {
 		Action<?> currentAction = null;
 		while(this.isRunning.get()) {
-			boolean isBusy = false;
+			boolean isBusy = false; 
 			for (String id : this.actorsQueues.keySet()) {
 				if (!this.isRunning.get()) {
 					break;
 				}
 				synchronized(this.isTheActorLocked) {
 					if (!this.isTheActorLocked.get(id).get()) { //the actor is free to fetch action's from
-						this.isTheActorLocked.get(id).set(true);
 						currentAction = this.actorsQueues.get(id).poll();
 						if (currentAction != null) { //so its queue isn't empty
+							this.isTheActorLocked.get(id).set(true); // lock this actor
 							isBusy = true;
 						}
 					}
-					if (isBusy) {
-						currentAction.handle(this, id, this.actorsPrivateStates.get(id));
-						currentAction = null;
-						this.isTheActorLocked.get(id).set(false); // free this actor to other threads
-						this.currentVersion.inc();
-					}
+				}// free the isTheActorLocked queue for other threads
+				if (isBusy) {
+					currentAction.handle(this, id, this.actorsPrivateStates.get(id));
+					this.isTheActorLocked.get(id).set(false); // free this actor to other threads
+					this.currentVersion.inc();
+					currentAction = null;
+					isBusy = false;
 				}
 			}
 			if(!isBusy) {
