@@ -22,13 +22,13 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Template;
  */
 public class ActorThreadPool {
 	
-	private BlockingQueue<Thread> threadsQueue;
-	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
 	private ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>> actorsQueues;
-	private ConcurrentHashMap<String, Boolean> isTheActorLocked;
+	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
+	private ConcurrentHashMap<String, AtomicBoolean> isTheActorLocked;
+	private BlockingQueue<Thread> threadsQueue;
+	private VersionMonitor currentVersion;
 	private AtomicBoolean isRunning;
 	
-
 	/**
 	 * creates a {@link ActorThreadPool} which has nthreads. Note, threads
 	 * should not get started until calling to the {@link #start()} method.
@@ -44,9 +44,11 @@ public class ActorThreadPool {
 	public ActorThreadPool(int nthreads) {
 		this.actorsQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>>(); //Initialize private data members of the pool
 		this.actorsPrivateStates = new ConcurrentHashMap<String, PrivateState>();
-		this.isTheActorLocked = new ConcurrentHashMap<String, Boolean>();
+		this.isTheActorLocked = new ConcurrentHashMap<String, AtomicBoolean>();
 		this.threadsQueue = new LinkedBlockingQueue<Thread>(nthreads);
+		this.currentVersion = new VersionMonitor();
 		this.isRunning.set(false); // until the start() method will be called
+		
 		for (int i = 0; i < nthreads; i++) { //lets add 'nthreads' threads
 			this.threadsQueue.add(new Thread( ()-> ThreadCode()) ); // ThreadCode method - Thread individual code
 		}
@@ -89,9 +91,10 @@ public class ActorThreadPool {
 			ConcurrentLinkedQueue<Action<?>> temp = new ConcurrentLinkedQueue<Action<?>>();
 			temp.add(action);
 			this.actorsQueues.put(actorId, temp);
-			this.isTheActorLocked.put(actorId, false); //this is a New Actor & he is available.
+			this.isTheActorLocked.put(actorId, new AtomicBoolean(false)); //this is a New Actor & he is available.
 			this.actorsPrivateStates.put(actorId, actorState);
 		}
+		this.currentVersion.inc();
 	}
 
 	/**
@@ -127,7 +130,33 @@ public class ActorThreadPool {
 	 * Thread individual code with the Loop design pattern
 	 */
 	private void ThreadCode() {
-		
+		Action<?> currentAction = null;
+		while(this.isRunning.get()) {
+			boolean isBusy = false;
+			for (String id : this.actorsQueues.keySet()) {
+				if (!this.isRunning.get()) {
+					break;
+				}
+				synchronized(this.isTheActorLocked) {
+					if (!this.isTheActorLocked.get(id).get()) { //the actor is free to fetch action's from
+						this.isTheActorLocked.get(id).set(true);
+						currentAction = this.actorsQueues.get(id).poll();
+						if (currentAction != null) { //so its queue isn't empty
+							isBusy = true;
+						}
+					}
+					if (isBusy) {
+						currentAction.handle(this, id, this.actorsPrivateStates.get(id));
+						currentAction = null;
+						this.isTheActorLocked.get(id).set(false); // free this actor to other threads
+						this.currentVersion.inc();
+					}
+				}
+			}
+			if(!isBusy) {
+				try { this.currentVersion.await(this.currentVersion.getVersion());} 
+				catch (Exception e) {}
+			}
+		}
 	}
-
 }
