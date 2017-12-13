@@ -1,10 +1,14 @@
 package bgu.spl.a2;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Template;
 
 /**
  * represents an actor thread pool - to understand what this class does please
@@ -20,10 +24,9 @@ public class ActorThreadPool {
 	
 	private BlockingQueue<Thread> threadsQueue;
 	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
-	private ConcurrentHashMap<String, ConcurrentLinkedQueue> actorsQueues;
-	private ConcurrentHashMap<String, Boolean> isActorLocked;
-	
-	
+	private ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>> actorsQueues;
+	private ConcurrentHashMap<String, Boolean> isTheActorLocked;
+	private AtomicBoolean isRunning;
 	
 
 	/**
@@ -39,13 +42,13 @@ public class ActorThreadPool {
 	 *            pool
 	 */
 	public ActorThreadPool(int nthreads) {
+		this.actorsQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>>(); //Initialize private data members of the pool
+		this.actorsPrivateStates = new ConcurrentHashMap<String, PrivateState>();
+		this.isTheActorLocked = new ConcurrentHashMap<String, Boolean>();
 		this.threadsQueue = new LinkedBlockingQueue<Thread>(nthreads);
+		this.isRunning.set(false); // until the start() method will be called
 		for (int i = 0; i < nthreads; i++) { //lets add 'nthreads' threads
-			this.threadsQueue.add(new Thread(()->{
-				
-				
-				
-			}));
+			this.threadsQueue.add(new Thread( ()-> ThreadCode()) ); // ThreadCode method - Thread individual code
 		}
 	}
 
@@ -54,7 +57,7 @@ public class ActorThreadPool {
 	 * @return actors
 	 */
 	public Map<String, PrivateState> getActors(){
-		return this.actorsMap;
+		return this.actorsPrivateStates;
 	}
 	
 	/**
@@ -63,7 +66,7 @@ public class ActorThreadPool {
 	 * @return actor's private state
 	 */
 	public PrivateState getPrivateState(String actorId){
-		return this.actorsMap.get(actorId);
+		return this.actorsPrivateStates.get(actorId);
 	}
 
 
@@ -79,8 +82,16 @@ public class ActorThreadPool {
 	 *            actor's private state (actor's information)
 	 */
 	public void submit(Action<?> action, String actorId, PrivateState actorState) {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		boolean found = actorsPrivateStates.containsKey(actorId);
+		if (found) {
+			((ConcurrentLinkedQueue<Action<?>>)this.actorsQueues.get(actorId)).add(action);
+		}else {
+			ConcurrentLinkedQueue<Action<?>> temp = new ConcurrentLinkedQueue<Action<?>>();
+			temp.add(action);
+			this.actorsQueues.put(actorId, temp);
+			this.isTheActorLocked.put(actorId, false); //this is a New Actor & he is available.
+			this.actorsPrivateStates.put(actorId, actorState);
+		}
 	}
 
 	/**
@@ -94,16 +105,29 @@ public class ActorThreadPool {
 	 *             if the thread that shut down the threads is interrupted
 	 */
 	public void shutdown() throws InterruptedException {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		this.isRunning.set(false);
+		for(Thread t:this.threadsQueue) {
+			t.interrupt(); // Interrupts this thread - maybe.  
+		}
+		for(Thread t: this.threadsQueue) {
+			t.join(); // Waits for this thread to die. 
+		}
 	}
 
 	/**
 	 * start the threads belongs to this thread pool
 	 */
 	public void start() {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		this.isRunning.set(true);
+		for(Thread t:this.threadsQueue) {
+			t.start(); // Interrupts this thread - maybe.  
+		}
+	}
+	/**
+	 * Thread individual code with the Loop design pattern
+	 */
+	private void ThreadCode() {
+		
 	}
 
 }
