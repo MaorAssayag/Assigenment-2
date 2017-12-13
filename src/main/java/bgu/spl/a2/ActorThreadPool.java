@@ -1,6 +1,10 @@
 package bgu.spl.a2;
 
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * represents an actor thread pool - to understand what this class does please
@@ -13,6 +17,14 @@ import java.util.Map;
  * methods
  */
 public class ActorThreadPool {
+	
+	private BlockingQueue<Thread> threadsQueue;
+	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
+	private ConcurrentHashMap<String, ConcurrentLinkedQueue> actorsQueues;
+	private ConcurrentHashMap<String, Boolean> isActorLocked;
+	
+	
+	
 
 	/**
 	 * creates a {@link ActorThreadPool} which has nthreads. Note, threads
@@ -27,8 +39,14 @@ public class ActorThreadPool {
 	 *            pool
 	 */
 	public ActorThreadPool(int nthreads) {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		this.threadsQueue = new LinkedBlockingQueue<Thread>(nthreads);
+		for (int i = 0; i < nthreads; i++) { //lets add 'nthreads' threads
+			this.threadsQueue.add(new Thread(()->{
+				
+				
+				
+			}));
+		}
 	}
 
 	/**
@@ -36,8 +54,7 @@ public class ActorThreadPool {
 	 * @return actors
 	 */
 	public Map<String, PrivateState> getActors(){
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		return this.actorsMap;
 	}
 	
 	/**
@@ -46,8 +63,7 @@ public class ActorThreadPool {
 	 * @return actor's private state
 	 */
 	public PrivateState getPrivateState(String actorId){
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		return this.actorsMap.get(actorId);
 	}
 
 
