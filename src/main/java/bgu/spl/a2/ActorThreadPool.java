@@ -1,12 +1,10 @@
 package bgu.spl.a2;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Template;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.BlockingQueue;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -25,7 +23,7 @@ public class ActorThreadPool {
 	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
 	private ConcurrentHashMap<String, AtomicBoolean> isTheActorLocked;
 	private BlockingQueue<Thread> threadsQueue;
-	private VersionMonitor currentVersion;
+	private VersionMonitor currentVersion;//singelton
 	private AtomicBoolean isRunning;
 	
 	/**
@@ -41,12 +39,12 @@ public class ActorThreadPool {
 	 *            pool
 	 */
 	public ActorThreadPool(int nthreads) {
-		this.actorsQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>>(); //Initialize private data members of the pool
+		this.actorsQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>>(); //Initialize private data members of the pool - we choose not to use diamond operator for clearity.
 		this.actorsPrivateStates = new ConcurrentHashMap<String, PrivateState>();
 		this.isTheActorLocked = new ConcurrentHashMap<String, AtomicBoolean>();
 		this.threadsQueue = new LinkedBlockingQueue<Thread>(nthreads);
 		this.currentVersion = new VersionMonitor();
-		this.isRunning.set(false); // until the start() method will be called
+		this.isRunning = new AtomicBoolean(false); // until the start() method will be called
 		
 		for (int i = 0; i < nthreads; i++) { //lets add 'nthreads' threads
 			this.threadsQueue.add(new Thread( ()-> ThreadCode()) ); // ThreadCode method - Thread individual code
@@ -135,7 +133,7 @@ public class ActorThreadPool {
 	 */
 	private void ThreadCode() {
 		Action<?> currentAction = null;
-		while(this.isRunning.get()) {
+		while(this.isRunning.get() && !Thread.interrupted()){
 			boolean isBusy = false; 
 			for (String id : this.actorsQueues.keySet()) {
 				if (!this.isRunning.get()) {
@@ -160,7 +158,7 @@ public class ActorThreadPool {
 			}
 			if(!isBusy) {
 				try { this.currentVersion.await(this.currentVersion.getVersion());} 
-				catch (Exception e) {}
+				catch (Exception e) {} // exception from await or from interrupt while the thread is waiting
 			}
 		}
 	}

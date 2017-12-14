@@ -23,7 +23,7 @@ public abstract class PrivateState {
 	 */
 	public void addRecord(String actionName){
 		if (this.history == null) {setHistory(new LinkedList<String>());} // creating new history list
-		history.add(actionName);
+		this.history.add(actionName);
 	}
 	
 	/**
