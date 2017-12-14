@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class Action<R> {
 	
-	private ActorThreadPool pool;
-	private String actorId;
-	private PrivateState actorState;
-	private callback callback;
-	private String actionName;
-	private Promise<R> Result;
-	private AtomicInteger actionRemaining = new AtomicInteger(0);
-	private boolean canBeExecute = false;
+	protected ActorThreadPool pool;
+	protected String actorId;
+	protected PrivateState actorState;
+	protected callback callback;
+	protected String actionName;
+	protected Promise<R> Result;
+	protected AtomicInteger actionRemaining = new AtomicInteger(0);
+	protected boolean canBeExecute = false;
 	
 	/**
      * start handling the action - note that this method is protected, a thread
@@ -77,7 +77,7 @@ public abstract class Action<R> {
     	}else {
         	for (Iterator<? extends Action<?>> iterator = actions.iterator(); iterator.hasNext();) {
     			Action<?> action = (Action<?>) iterator.next();
-    	    	action.getResult().subscribe(()->{this.actionRemainingDecrement();});
+    			action.getResult().subscribe(()->{this.actionRemainingDecrement();});
     		}
     	}
     }
