@@ -1,5 +1,6 @@
 package bgu.spl.a2.sim.privateStates;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import bgu.spl.a2.PrivateState;
@@ -20,8 +21,11 @@ public class CoursePrivateState extends PrivateState{
 	 * this may cause automatic tests to fail..
 	 */
 	public CoursePrivateState() {
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		regStudents = new LinkedList<String>();
+		prequisites = new LinkedList<String>();
+		availableSpots = 0;
+		registered = 0;
+		this.setHistory(new LinkedList<String>());	
 	}
 
 	public Integer getAvailableSpots() {
@@ -39,4 +43,32 @@ public class CoursePrivateState extends PrivateState{
 	public List<String> getPrequisites() {
 		return prequisites;
 	}
+	
+	public void setAvailableSpots(Integer availableSpots) {
+		this.availableSpots = availableSpots;
+	}
+
+	public void setPrequisites(List<String> prequisites) {
+		this.prequisites = prequisites;
+	}
+
+	private void setRegistered(Integer registered) {
+		this.registered = registered;
+	}
+
+	public void addRegStudent(String regStudents) {
+		if(!this.regStudents.contains(regStudents)) {
+			this.regStudents.add(regStudents);
+			this.setRegistered(this.registered.intValue()+1);
+		}
+	}
+	
+	public void RemoveStudent (String studentName){
+		if(this.regStudents.remove(studentName)) // return true if the list changed (:= the element was in the list)
+			this.setRegistered(this.registered.intValue()-1);
+	}
+	
+	/*
+	 * EndOfFile
+	 */
 }
