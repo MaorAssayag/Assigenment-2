@@ -57,15 +57,17 @@ public class CoursePrivateState extends PrivateState{
 	}
 
 	public void addRegStudent(String regStudents) {
-		if(!this.regStudents.contains(regStudents)) {
+		if(!this.regStudents.contains(regStudents) && this.availableSpots.intValue() > 0) {
 			this.regStudents.add(regStudents);
 			this.setRegistered(this.registered.intValue()+1);
+			this.setAvailableSpots(this.availableSpots.intValue()-1);
 		}
 	}
 	
 	public void RemoveStudent (String studentName){
 		if(this.regStudents.remove(studentName)) // return true if the list changed (:= the element was in the list)
 			this.setRegistered(this.registered.intValue()-1);
+			this.setAvailableSpots(this.availableSpots.intValue()+1);
 	}
 	
 	/*

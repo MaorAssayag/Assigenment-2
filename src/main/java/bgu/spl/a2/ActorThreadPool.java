@@ -81,7 +81,7 @@ public class ActorThreadPool {
 	 *            actor's private state (actor's information)
 	 */
 	public void submit(Action<?> action, String actorId, PrivateState actorState) {
-		boolean found = actorsPrivateStates.containsKey(actorId);
+		boolean found = this.actorsPrivateStates.containsKey(actorId);
 		if (found) {
 			((ConcurrentLinkedQueue<Action<?>>)this.actorsQueues.get(actorId)).add(action);
 		}else {
