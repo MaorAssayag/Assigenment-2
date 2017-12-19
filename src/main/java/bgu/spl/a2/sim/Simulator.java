@@ -7,7 +7,6 @@ package bgu.spl.a2.sim;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -17,11 +16,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.internal.LinkedTreeMap;
 
 import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
+import bgu.spl.a2.sim.actions.AddStudent;
 import bgu.spl.a2.sim.actions.OpenANewCourse;
+import bgu.spl.a2.sim.actions.ParticipateInCourse;
 import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
@@ -84,66 +84,6 @@ public class Simulator {
     	end(); // end simulator.
     }
     
-    /**
-     * addAction - get the action data in JsonObject & submit it to actorThreadPoll according to its type.
-     */
-    public static void addAction(JsonObject currentAction, CountDownLatch currentPhase) {
-    	String actionType = currentAction.get("Action").getAsString();
-    	//TODO: each new action will get a subscribed lambada that do := {currentPhase.countDown();} after we submit.
-    	switch (actionType) {
-    		case "Open Course":{
-    			String department = currentAction.get("Department").getAsString();
-    			String course = currentAction.get("Course").getAsString();
-    			int space = currentAction.get("Space").getAsInt();
-                LinkedList<String> prerequisites = new LinkedList<>();
-                Iterator<JsonElement> it = currentAction.get("Prerequisites").getAsJsonArray().iterator();
-                while (it.hasNext())
-                	prerequisites.add(it.next().getAsString()); // add each prerequisite
-                
-                //department State handle
-                DepartmentPrivateState departmentState; 
-				if (!actorThreadPool.getActors().containsKey(department)){
-					departmentState = new DepartmentPrivateState();
-					actorThreadPool.submit(null, department, departmentState);
-				}else{
-					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
-				}
-				
-                OpenANewCourse open = new OpenANewCourse(space, course, prerequisites);
-                actorThreadPool.submit(open, department, departmentState);  //will call the handle function for 'open'
-                open.getResult().subscribe(()->{currentPhase.countDown();}); // currentPhase countDownLatch-1 when the action is complete
-    		}
-    		break;
-    		case "Add Student":{
-    			
-    		}
-    		break;
-    		case "Participate In Course":{
-    			
-    		}
-    		break;
-    		case "Register With Preferences":{
-    			
-    		}
-    		break;
-    		case "Unregister":{
-    			
-    		}
-    		break;
-    		case "End Registeration":{
-    			
-    		}
-    		break;
-    		case "Administrative Check":{
-    			
-    		}
-    		break;
-    		case "Close Course":{
-    			
-    		}
-    		break;
-    	}
-    }
 	
 	/**
 	* attach an ActorThreadPool to the Simulator, this ActorThreadPool will be used to run the simulation
@@ -183,6 +123,93 @@ public class Simulator {
 		start();
 		return 0;
 	}
+	
+    /**
+     * addAction - get the action data in JsonObject & submit it to actorThreadPoll according to its type.
+     */
+    public static void addAction(JsonObject currentAction, CountDownLatch currentPhase) {
+    	String actionType = currentAction.get("Action").getAsString();
+    	//TODO : finish all actions
+    	switch (actionType) {
+    		case "Open Course":{
+    			String department = currentAction.get("Department").getAsString();
+    			String course = currentAction.get("Course").getAsString();
+    			int space = currentAction.get("Space").getAsInt();
+                LinkedList<String> prerequisites = new LinkedList<>();
+                Iterator<JsonElement> it = currentAction.get("Prerequisites").getAsJsonArray().iterator();
+                while (it.hasNext())
+                	prerequisites.add(it.next().getAsString()); // add each prerequisite
+                
+                //department State handle
+                DepartmentPrivateState departmentState; 
+				if (!actorThreadPool.getActors().containsKey(department)){
+					departmentState = new DepartmentPrivateState();
+					actorThreadPool.submit(null, department, departmentState);
+				}else{
+					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
+				}
+				
+                OpenANewCourse open = new OpenANewCourse(space, course, prerequisites,currentPhase);
+                actorThreadPool.submit(open, department, departmentState);  //will call the handle function for 'open'
+    		}
+    		break;
+    		
+    		case "Add Student":{
+    			String department = currentAction.get("Department").getAsString();
+    			String studentID = currentAction.get("Student").getAsString();
+    			
+                //department State handle
+                DepartmentPrivateState departmentState; 
+				if (!actorThreadPool.getActors().containsKey(department)){
+					departmentState = new DepartmentPrivateState();
+					actorThreadPool.submit(null, department, departmentState);
+				}else{
+					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
+				}
+				
+				AddStudent add = new AddStudent(studentID, currentPhase);
+				actorThreadPool.submit(add, department, departmentState);
+    		}
+    		break;
+    		
+    		case "Participate In Course":{
+    			String studentID = currentAction.get("Student").getAsString();
+    			String course = currentAction.get("Course").getAsString();
+    			int grade = currentAction.get("Grade").getAsJsonArray().get(0).getAsInt();
+				if (!actorThreadPool.getActors().containsKey(course)){
+					return;
+				}
+				ParticipateInCourse praticipate = new ParticipateInCourse(studentID, grade,currentPhase);
+				actorThreadPool.submit(praticipate, course, actorThreadPool.getPrivateState(course));    			
+    		}
+    		break;
+    		
+    		case "Register With Preferences":{
+    			
+    		}
+    		break;
+    		
+    		case "Unregister":{
+    			
+    		}
+    		break;
+    		
+    		case "End Registeration":{
+    			
+    		}
+    		break;
+    		
+    		case "Administrative Check":{
+    			
+    		}
+    		break;
+    		
+    		case "Close Course":{
+    			
+    		}
+    		break;
+    	}
+    }
 	
 	/*
 	 * End Of File.

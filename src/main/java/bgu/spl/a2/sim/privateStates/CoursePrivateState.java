@@ -51,6 +51,11 @@ public class CoursePrivateState extends PrivateState{
 	public void setPrequisites(List<String> prequisites) {
 		this.prequisites = prequisites;
 	}
+	
+	public void addPrequisite(String prequisite) {
+		this.prequisites.add(prequisite);
+	}
+
 
 	private void setRegistered(Integer registered) {
 		this.registered = registered;

@@ -79,7 +79,6 @@ public class ActorThreadPool {
 		return this.actorsPrivateStates.get(actorId);
 	}
 
-
 	/**
 	 * submits an action into an actor to be executed by a thread belongs to
 	 * this thread pool
@@ -169,7 +168,7 @@ public class ActorThreadPool {
 			}
 			if(!isBusy) {
 				try { this.currentVersion.await(this.currentVersion.getVersion());} 
-				catch (Exception e) {} // exception from await or from interrupt while the thread is waiting
+				catch (InterruptedException e) {Thread.currentThread().interrupt();} // exception from await or from interrupt while the thread is waiting
 			}
 		}
 	}
