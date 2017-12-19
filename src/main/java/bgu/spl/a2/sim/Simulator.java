@@ -185,7 +185,7 @@ public class Simulator {
     		break;
     		
     		case "Register With Preferences":{
-    			
+    			//
     		}
     		break;
     		
