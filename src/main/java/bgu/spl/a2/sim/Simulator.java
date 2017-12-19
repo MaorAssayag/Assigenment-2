@@ -9,14 +9,20 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.internal.LinkedTreeMap;
 
 import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
+import bgu.spl.a2.sim.actions.OpenANewCourse;
+import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
  * A class describing the simulator for part 2 of the assignment
@@ -31,7 +37,8 @@ public class Simulator {
 	* Begin the simulation Should not be called before attachActorThreadPool()
 	*/
     public static void start(){
-    	//0. get the computers set and add them to a new warehouse.
+    	//0. get the computers array and add them to a new warehouse.
+    	//
     	JsonArray computers = currentJsonObject.getAsJsonArray("Computers");
     	Warehouse warehouse = new Warehouse(computers.size());
     	for (int i = 0; i < computers.size(); i++) {
@@ -46,24 +53,65 @@ public class Simulator {
     	//             in Phase 1 should be completed before proceeding to Phase 2.
     	actorThreadPool.start();
     	JsonArray actions = currentJsonObject.getAsJsonArray("Phase 1");
+    	CountDownLatch phase1 = new CountDownLatch(actions.size());
     	for (int i = 0; i < actions.size(); i++) {
 			JsonObject data = actions.get(i).getAsJsonObject();
-			addAction(data);
+			addAction(data , phase1); // each action will count down phase1 when it is complete.
     	}
-
-    
+    	try {phase1.await();}
+    	catch (InterruptedException e) {} // phase 1 is done.
+    	
+    	//2. Phase 2 - An array of all the open courses actions, and some other action might appear. All the actions
+    	//             in Phase 2 should be completed before proceeding to Phase 3.
+    	actions = currentJsonObject.getAsJsonArray("Phase 2");
+    	CountDownLatch phase2 = new CountDownLatch(actions.size());
+    	for (int i = 0; i < actions.size(); i++) {
+			JsonObject data = actions.get(i).getAsJsonObject();
+			addAction(data , phase2); // each action will count down phase2 when it is complete.
+    	}
+    	try {phase2.await();}
+    	catch (InterruptedException e) {} // phase 2 is done.
+    	
+    	//2. Phase 3 - An array of all the open courses actions, and some other action might appear. All the actions
+    	//             in Phase 3 should be completed before proceeding to Phase 3.
+    	actions = currentJsonObject.getAsJsonArray("Phase 3");
+    	CountDownLatch phase3 = new CountDownLatch(actions.size());
+    	for (int i = 0; i < actions.size(); i++) {
+			JsonObject data = actions.get(i).getAsJsonObject();
+			addAction(data , phase3); // phase3 countDownLatch currently not in use.
+    	}   
+    	
+    	end(); // end simulator.
     }
     
     /**
      * addAction - get the action data in JsonObject & submit it to actorThreadPoll according to its type.
      */
-    public static void addAction(JsonObject currentAction) {
+    public static void addAction(JsonObject currentAction, CountDownLatch currentPhase) {
     	String actionType = currentAction.get("Action").getAsString();
+    	//TODO: each new action will get a subscribed lambada that do := {currentPhase.countDown();} after we submit.
     	switch (actionType) {
     		case "Open Course":{
-    			
-    			
-    			
+    			String department = currentAction.get("Department").getAsString();
+    			String course = currentAction.get("Course").getAsString();
+    			int space = currentAction.get("Space").getAsInt();
+                LinkedList<String> prerequisites = new LinkedList<>();
+                Iterator<JsonElement> it = currentAction.get("Prerequisites").getAsJsonArray().iterator();
+                while (it.hasNext())
+                	prerequisites.add(it.next().getAsString()); // add each prerequisite
+                
+                //department State handle
+                DepartmentPrivateState departmentState; 
+				if (!actorThreadPool.getActors().containsKey(department)){
+					departmentState = new DepartmentPrivateState();
+					actorThreadPool.submit(null, department, departmentState);
+				}else{
+					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
+				}
+				
+                OpenANewCourse open = new OpenANewCourse(space, course, prerequisites);
+                actorThreadPool.submit(open, department, departmentState);  //will call the handle function for 'open'
+                open.getResult().subscribe(()->{currentPhase.countDown();}); // currentPhase countDownLatch-1 when the action is complete
     		}
     		break;
     		case "Add Student":{
