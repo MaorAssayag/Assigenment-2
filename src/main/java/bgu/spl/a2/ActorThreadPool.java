@@ -5,6 +5,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -57,6 +58,16 @@ public class ActorThreadPool {
 	 */
 	public Map<String, PrivateState> getActors(){
 		return this.actorsPrivateStates;
+	}
+	
+	/**
+	 * getter for actors; with hashMap
+	 * @return actors
+	 */
+	public HashMap<String, PrivateState> getActorsHash(){
+		HashMap<String, PrivateState> ans = new HashMap<String, PrivateState>();
+		ans.putAll(this.actorsPrivateStates);
+		return ans;
 	}
 	
 	/**

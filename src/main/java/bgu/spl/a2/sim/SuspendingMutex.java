@@ -53,7 +53,7 @@ public class SuspendingMutex {
 	public void up(){
 		if (this.promiseList.size() > 0) { 
 			if(!this.isFree.getAndSet(true)) { // return false if isFree was false
-				this.promiseList.poll().resolve(this.computer); // resolve the top (oldest) request for aacquisition.
+				this.promiseList.poll().resolve(this.computer); // resolve the top (oldest) request for acquisition.
 			}
 		}
 	}
