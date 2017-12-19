@@ -30,8 +30,7 @@ public class Simulator {
 	* @param myActorThreadPool - the ActorThreadPool which will be used by the simulator
 	*/
 	public static void attachActorThreadPool(ActorThreadPool myActorThreadPool){
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		actorThreadPool = myActorThreadPool;
 	}
 	
 	/**
@@ -39,8 +38,13 @@ public class Simulator {
 	* returns list of private states
 	*/
 	public static HashMap<String,PrivateState> end(){
-		//TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		try {
+			actorThreadPool.shutdown();
+			return actorThreadPool.getActorsHash();
+		}
+		catch(Exception e) {}
+		return null;
+
 	}
 	
 	
