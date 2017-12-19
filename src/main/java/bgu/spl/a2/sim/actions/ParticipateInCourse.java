@@ -9,6 +9,11 @@ import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 
+/**
+ * Assignment doc - Action no.3;
+ * This action should try to register the student in the course, if it succeeds, should add the
+ * course to the grades sheet of the student, and give him a grade if supplied. See the input example.
+ */
 public class ParticipateInCourse extends Action<Boolean> {
     private CountDownLatch currentPhase;
     private int grade;

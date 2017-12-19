@@ -8,6 +8,10 @@ import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 
+/**
+ * Aid class for Participate in course Action.
+ * This action should try to register the student in the course, if it succeeds, should resolve with true.
+ */
 public class isValidForParticipate extends Action<Boolean> {
 
 	CountDownLatch currentPhase;
