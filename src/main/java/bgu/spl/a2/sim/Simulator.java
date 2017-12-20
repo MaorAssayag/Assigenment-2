@@ -17,11 +17,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import bgu.spl.a2.Action;
 import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
 import bgu.spl.a2.sim.actions.AddStudent;
 import bgu.spl.a2.sim.actions.OpenANewCourse;
 import bgu.spl.a2.sim.actions.ParticipateInCourse;
+import bgu.spl.a2.sim.actions.addSpace;
 import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
@@ -50,7 +52,7 @@ public class Simulator {
 		}
     	
     	//1. Phase 1 - An array of all the open courses actions, and some other action might appear. All the actions
-    	//             in Phase 1 should be completed before proceeding to Phase 2.
+    	// in Phase 1 should be completed before proceeding to Phase 2.
     	actorThreadPool.start();
     	JsonArray actions = currentJsonObject.getAsJsonArray("Phase 1");
     	CountDownLatch phase1 = new CountDownLatch(actions.size());
@@ -62,7 +64,7 @@ public class Simulator {
     	catch (InterruptedException e) {} // phase 1 is done.
     	
     	//2. Phase 2 - An array of all the open courses actions, and some other action might appear. All the actions
-    	//             in Phase 2 should be completed before proceeding to Phase 3.
+    	//  in Phase 2 should be completed before proceeding to Phase 3.
     	actions = currentJsonObject.getAsJsonArray("Phase 2");
     	CountDownLatch phase2 = new CountDownLatch(actions.size());
     	for (int i = 0; i < actions.size(); i++) {
@@ -73,7 +75,7 @@ public class Simulator {
     	catch (InterruptedException e) {} // phase 2 is done.
     	
     	//2. Phase 3 - An array of all the open courses actions, and some other action might appear. All the actions
-    	//             in Phase 3 should be completed before proceeding to Phase 3.
+    	// in Phase 3 should be completed before proceeding to Phase 3.
     	actions = currentJsonObject.getAsJsonArray("Phase 3");
     	CountDownLatch phase3 = new CountDownLatch(actions.size());
     	for (int i = 0; i < actions.size(); i++) {
@@ -139,7 +141,6 @@ public class Simulator {
                 Iterator<JsonElement> it = currentAction.get("Prerequisites").getAsJsonArray().iterator();
                 while (it.hasNext())
                 	prerequisites.add(it.next().getAsString()); // add each prerequisite
-                
                 //department State handle
                 DepartmentPrivateState departmentState; 
 				if (!actorThreadPool.getActors().containsKey(department)){
@@ -148,7 +149,6 @@ public class Simulator {
 				}else{
 					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
 				}
-				
                 OpenANewCourse open = new OpenANewCourse(space, course, prerequisites,currentPhase);
                 actorThreadPool.submit(open, department, departmentState);  //will call the handle function for 'open'
     		}
@@ -166,7 +166,6 @@ public class Simulator {
 				}else{
 					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
 				}
-				
 				AddStudent add = new AddStudent(studentID, currentPhase);
 				actorThreadPool.submit(add, department, departmentState);
     		}
@@ -177,10 +176,19 @@ public class Simulator {
     			String course = currentAction.get("Course").getAsString();
     			int grade = currentAction.get("Grade").getAsJsonArray().get(0).getAsInt();
 				if (!actorThreadPool.getActors().containsKey(course)){
-					return;
-				}
+					return;}//there is no such course in the system
 				ParticipateInCourse praticipate = new ParticipateInCourse(studentID, grade,currentPhase);
 				actorThreadPool.submit(praticipate, course, actorThreadPool.getPrivateState(course));    			
+    		}
+    		break;
+    		
+    		case "Add Spaces":{
+    			int num = currentAction.get("Number").getAsInt();
+    			String course = currentAction.get("Course").getAsString();
+    			if (!actorThreadPool.getActors().containsKey(course)){
+					return;}//there is no such course in the system
+    			addSpace add = new addSpace(course, num, currentPhase);
+    			actorThreadPool.submit(add, course, actorThreadPool.getPrivateState(course));
     		}
     		break;
     		
