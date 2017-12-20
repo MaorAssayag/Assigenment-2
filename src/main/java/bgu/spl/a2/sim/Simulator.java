@@ -23,6 +23,7 @@ import bgu.spl.a2.sim.actions.AddStudent;
 import bgu.spl.a2.sim.actions.OpenANewCourse;
 import bgu.spl.a2.sim.actions.ParticipateInCourse;
 import bgu.spl.a2.sim.actions.addSpace;
+import bgu.spl.a2.sim.actions.closeCourse;
 import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
@@ -200,19 +201,29 @@ public class Simulator {
     			String studentID = currentAction.get("Student").getAsString();
     			String course = currentAction.get("Course").getAsString();
     			if (!actorThreadPool.getActors().containsKey(course)){
-					return;}//there is no such course in the system
+					return; //there is no such course in the system
+				}
     			unRegister un = new unRegister(course, studentID, currentPhase);
     			actorThreadPool.submit(un, course, actorThreadPool.getPrivateState(course));
     		}
     		break;
     		
     		case "Close Course":{
-    			
+				String department = currentAction.get("Department").getAsString();
+				if (!actorThreadPool.getActors().containsKey(department)){
+					return; //there is no such department in the system
+				}
+				String course = currentAction.get("Course").getAsString();
+				if (!actorThreadPool.getActors().containsKey(course)){
+					return; //there is no such course in the system
+				}
+				closeCourse close = new closeCourse(course, currentPhase);
+				actorThreadPool.submit(close, department, actorThreadPool.getPrivateState(department));
     		}
     		break;  
     		
     		case "Administrative Check":{
-    			
+    			//TODO
     		}
     		break;
     		
