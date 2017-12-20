@@ -21,17 +21,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class VersionMonitor {
 	private AtomicInteger version = new AtomicInteger(0);
 	
-    public int getVersion() { //a Thread can't change the version value throw this methods, it doesn't need to be synchronize.
+    public synchronized int getVersion() { //a Thread can't change the version value throw this methods, it doesn't need to be synchronize.
         return version.get();
     }
 
     public synchronized void inc() { // only 1 Thread at a time can change the value of version.
     	version.getAndIncrement();
-    	notifyAll(); // for all the threads that waiting for the version to change or for inc() 
+    	this.notifyAll(); // for all the threads that waiting for the version to change or for inc() 
     }
 
     public synchronized void await(int version) throws InterruptedException { // only 1 Thread at a time can read the value of version at a time.
-		while (this.version.get() == version) { // avoid busy wait for the Thread
+		while (this.getVersion() == version) { // avoid busy wait for the Thread
 			this.wait();
 		}
     }

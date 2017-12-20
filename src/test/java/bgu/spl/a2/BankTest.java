@@ -1,8 +1,10 @@
 package bgu.spl.a2;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
+
+
+        import java.util.ArrayList;
+        import java.util.List;
+        import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by Lenovo on 12/9/2017.
@@ -23,6 +25,7 @@ class confirmation extends Action{
     @Override
     protected void start() {
         Result.resolve(true);//just for test lets say the other bank always approve the transaction
+   //     System.out.println("start conf");
     }
 }
 
@@ -36,17 +39,16 @@ class Transmission extends Action{
     String bankB;
     PrivateState bankState;
     VersionMonitor vm ;
-    
-    public Transmission(int amount,String clientA,String clientB,String bankA,String bankB,PrivateState bankState){
+    public Transmission(String name, int amount,String clientA,String clientB,String bankA,String bankB,PrivateState bankState){
         this.amount = amount;
         this.clientA =clientA;
         this.clientB = clientB;
         this.bankA =bankA;
         this.bankB =bankB;
         this.bankState =bankState;
-        setActionName("Trans");
         vm = new VersionMonitor();
-        Result = new Promise<String>();
+        this.Result = new Promise<String>();
+        this.actionName = name;
     }
 
     public VersionMonitor getVm(){
@@ -63,20 +65,18 @@ class Transmission extends Action{
         sendMessage(confAction1, bankB, new PrivateState() {});
         sendMessage(confAction, bankB, new PrivateState() {});
         then(actions,()->{
-            Boolean result = actions.get(0).getResult().get();
-            if(result==true){
+            Boolean Result = actions.get(0).getResult().get();
+
+            if(Result==true){
                 complete("transmission good");
                 System.out.println("transmission good");
-                List<String> history = pool.getPrivateState(this.bankA).getLogger();
-                for (int i = 0; i < history.size(); i++) {
-					System.out.print(history.get(i) + ", ");
-				}
             }
             else{
                 complete("transmission bad");
                 System.out.println("transmission bad");
             }
         });
+
 
     }
 
@@ -85,34 +85,65 @@ class Transmission extends Action{
 public class BankTest {
 
     public static void main(String[] args) throws InterruptedException {
-        ActorThreadPool pool = new ActorThreadPool(8);
-        Action<String> trans = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
-        Action<String> trans1 = new Transmission(100,"B","A","bank2","bank1",new PrivateState(){});
-        Action<String> trans2 = new Transmission(100,"A","B","bank1","bank3",new PrivateState(){});
-        Action<String> trans3 = new Transmission(100,"A","B","bank3","bank2",new PrivateState(){});
-        Action<String> trans4 = new Transmission(100,"C","B","bank2","bank3",new PrivateState(){});
-        Action<String> trans5 = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
-        pool.submit(trans1,"bank2",new PrivateState() {});
-        pool.submit(trans,"bank1",new PrivateState() {});
-        pool.start();
-        pool.submit(trans2,"bank1",new PrivateState() {});
-        pool.submit(trans3,"bank3",new PrivateState() {});
-        pool.submit(trans4,"bank2",new PrivateState() {});
-        pool.submit(trans5,"bank1",new PrivateState() {});
+        for (int n = 0; n < 10000; n++) {
+            System.out.println("=================================="+n);
+            ActorThreadPool pool = new ActorThreadPool(3);
+            Action<String> trans = new Transmission("0",100, "A", "B", "bank1", "bank2", new PrivateState() {
+            });
+            Action<String> trans1 = new Transmission("1",100, "B", "A", "bank2", "bank1", new PrivateState() {
+            });
+            Action<String> trans2 = new Transmission("2",100, "A", "B", "bank1", "bank3", new PrivateState() {
+            });
+            Action<String> trans3 = new Transmission("3",100, "A", "B", "bank3", "bank2", new PrivateState() {
+            });
+            Action<String> trans4 = new Transmission("4",100, "C", "B", "bank2", "bank3", new PrivateState() {
+            });
+            Action<String> trans5 = new Transmission("5",100, "A", "B", "bank1", "bank2", new PrivateState() {
+            });
 
-        CountDownLatch l = new CountDownLatch(6);
-        trans.getResult().subscribe(()-> l.countDown());
-        trans1.getResult().subscribe(()-> l.countDown());
-        trans2.getResult().subscribe(()-> l.countDown());
-        trans3.getResult().subscribe(()-> l.countDown());
-        trans4.getResult().subscribe(()-> l.countDown());
-        trans5.getResult().subscribe(()-> l.countDown());
-        
-        try {
-            l.await();
-        } catch (InterruptedException e) {
+
+
+            CountDownLatch l = new CountDownLatch(6);
+            trans.getResult().subscribe(() -> l.countDown());
+            trans1.getResult().subscribe(() -> l.countDown());
+            trans2.getResult().subscribe(() -> l.countDown());
+            trans3.getResult().subscribe(() -> l.countDown());
+            trans4.getResult().subscribe(() -> l.countDown());
+            trans5.getResult().subscribe(() -> l.countDown());
+            //  Action<String> trans6 = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
+            //Action<String> trans7 = new Transmission(100,"B","A","bank2","bank1",new PrivateState(){});
+            //Action<String> trans8 = new Transmission(100,"A","B","bank1","bank3",new PrivateState(){});
+            //Action<String> trans9 = new Transmission(100,"A","B","bank3","bank2",new PrivateState(){});
+            //Action<String> trans10 = new Transmission(100,"C","B","bank2","bank3",new PrivateState(){});
+            //Action<String> trans11 = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
+
+
+            pool.submit(trans, "bank1", new PrivateState() {
+            });
+
+
+            Object lock = new Object();
+            pool.start();
+            pool.submit(trans2, "bank1", new PrivateState() {
+            });
+
+            pool.submit(trans3, "bank3", new PrivateState() {
+            });
+
+
+            pool.submit(trans4, "bank2", new PrivateState() {
+            });
+            pool.submit(trans5, "bank1", new PrivateState() {
+            });
+
+            pool.submit(trans1, "bank2", new PrivateState() {
+            });
+
+            try {
+                l.await();
+            } catch (InterruptedException e) {
+            }
+            pool.shutdown();
         }
-        pool.shutdown();
     }
-
 }

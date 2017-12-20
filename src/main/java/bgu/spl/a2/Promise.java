@@ -34,7 +34,7 @@ public class Promise<T>{
 		if (!isResolved()) {
 			throw new IllegalStateException("Promise has not been resolved yet !");
 		}
-		return this.value;
+		else return this.value;
 	}
 
 	/**

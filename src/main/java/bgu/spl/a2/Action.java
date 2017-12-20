@@ -77,7 +77,8 @@ public abstract class Action<R> {
     	}else {
         	for (Iterator<? extends Action<?>> iterator = actions.iterator(); iterator.hasNext();) {
     			Action<?> action = (Action<?>) iterator.next();
-    			action.getResult().subscribe(()->{this.actionRemainingDecrement();});
+    			action.getResult().subscribe(()->{
+    				this.actionRemainingDecrement();});
     		}
     	}
     }
@@ -135,7 +136,7 @@ public abstract class Action<R> {
 	/**
 	 * Decrement the current counter for the remaining actions that need to be resolved before calling the callback.
 	 */
-	private void actionRemainingDecrement() {
+	protected synchronized void actionRemainingDecrement() {
 		this.actionRemaining.decrementAndGet(); //Atomically decrements by one the current value.
 		if (this.actionRemaining.intValue()==0) {
 			sendMessage(this, this.actorId, this.actorState); // then the callback will be execute

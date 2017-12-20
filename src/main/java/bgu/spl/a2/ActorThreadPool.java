@@ -90,8 +90,8 @@ public class ActorThreadPool {
 	 * @param actorState
 	 *            actor's private state (actor's information)
 	 */
-	public void submit(Action<?> action, String actorId, PrivateState actorState) {
-		boolean found = this.actorsPrivateStates.containsKey(actorId);
+	public synchronized void submit(Action<?> action, String actorId, PrivateState actorState) {
+		boolean found = this.actorsQueues.containsKey(actorId);
 		if (found) {
 			((ConcurrentLinkedQueue<Action<?>>)this.actorsQueues.get(actorId)).add(action);
 		}else {
@@ -115,6 +115,7 @@ public class ActorThreadPool {
 	 *             if the thread that shut down the threads is interrupted
 	 */
 	public void shutdown() throws InterruptedException {
+		System.out.println("shutting down");
 		this.isRunning.set(false);
 		for(Thread t:this.threadsQueue) {
 			t.interrupt(); // Interrupts this thread - maybe.  
@@ -122,6 +123,7 @@ public class ActorThreadPool {
 		for(Thread t: this.threadsQueue) {
 			t.join(); // Waits for this thread to die. 
 		}
+		System.out.println("shutting down complete");
 	}
 
 	/**
@@ -143,32 +145,40 @@ public class ActorThreadPool {
 	 */
 	private void ThreadCode() {
 		Action<?> currentAction = null;
-		while(this.isRunning.get() && !Thread.interrupted()){
-			boolean isBusy = false; 
-			for (String id : this.actorsQueues.keySet()) {
-				if (!this.isRunning.get()) {
-					break;
-				}
-				synchronized(this.isTheActorLocked) {
-					if (!this.isTheActorLocked.get(id).get()) { //the actor is free to fetch action's from
-						currentAction = this.actorsQueues.get(id).poll();
-						if (currentAction != null) { //so its queue isn't empty
-							this.isTheActorLocked.get(id).set(true); // lock this actor
+		int curVersion = 0;
+		String currentActorId = "";
+		boolean isBusy = false;
+		while(!Thread.currentThread().isInterrupted()){
+			synchronized(this.isTheActorLocked) {
+				for (String id : this.actorsQueues.keySet()) {
+					if (!this.isTheActorLocked.get(id).getAndSet(true)) { //the actor is free to fetch action's from
+						if (!this.actorsQueues.get(id).isEmpty()) {
 							isBusy = true;
+							curVersion = this.currentVersion.getVersion();
+							currentActorId = id;
+							break;
+						}else {
+							this.isTheActorLocked.get(id).getAndSet(false);
 						}
 					}
-				}// free the isTheActorLocked queue for other threads
-				if (isBusy) {
-					currentAction.handle(this, id, this.actorsPrivateStates.get(id));
-					this.isTheActorLocked.get(id).set(false); // free this actor to other threads
-					this.currentVersion.inc();
-					currentAction = null;
-					isBusy = false;
 				}
+			}// free the current actor queue for other threads
+			if (isBusy) {
+				try {
+					currentAction = this.actorsQueues.get(currentActorId).poll();
+					currentAction.handle(this, currentActorId, this.actorsPrivateStates.get(currentActorId));
+				}catch(Exception e) {
+					System.out.println("cant handle");
+				}
+				this.isTheActorLocked.get(currentActorId).set(false); // free this actor to other threads
+				this.currentVersion.inc();
+				currentAction = null;
+				isBusy = false;
+				currentActorId = "";
 			}
-			if(!isBusy) {
-				try { this.currentVersion.await(this.currentVersion.getVersion());} 
-				catch (InterruptedException e) {Thread.currentThread().interrupt();} // exception from await or from interrupt while the thread is waiting
+			else { //isBusy = false
+				try { this.currentVersion.await(curVersion);} 
+				catch (InterruptedException  e) {Thread.currentThread().interrupt();} // exception from await or from interrupt while the thread is waiting
 			}
 		}
 	}
