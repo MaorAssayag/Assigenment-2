@@ -54,9 +54,9 @@ public class ParticipateInCourse extends Action<Boolean> {
             	   studentState.addGrades(this.actorId,this.grade);//update student grade's with this new course !
                }
                complete(true);
+               currentPhase.countDown();
             }
-        });
-        currentPhase.countDown();
+        });        
         return;	
 	}
 	
