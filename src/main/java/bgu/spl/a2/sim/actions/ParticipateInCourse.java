@@ -45,17 +45,21 @@ public class ParticipateInCourse extends Action<Boolean> {
         Action<Boolean> isValid = new isValidForParticipate(prequisites,this.actorId,grade);
         List<Action<Boolean>> temp = new LinkedList<Action<Boolean>>();
         temp.add(isValid);//list that contains isValid
-        Promise<Boolean> result = (Promise<Boolean>)sendMessage(isValid,this.studentID,studentState); // return the promise of isValid&insert isValid to the pool.
+        Promise<Boolean> result = (Promise<Boolean>) sendMessage(isValid,this.studentID,studentState); // return the promise of isValid&insert isValid to the pool.
         
         then(temp,()->{ //still in the course Actor
             if (result.get().booleanValue()) { // then the student registration is valid.
-               ((CoursePrivateState)this.actorState).addRegStudent(this.studentID);
-               if (((CoursePrivateState)actorState).getRegStudents().contains(this.studentID)) { //if there was a space in the course for him
-            	   studentState.addGrades(this.actorId,this.grade);//update student grade's with this new course !
-               }
-               complete(true);
-               currentPhase.countDown();
-            }
+            	if (((CoursePrivateState)this.actorState).getAvailableSpots().intValue() == 0) {
+                    Action<Boolean> disenroll = new disEnroll(this.actorId);
+                    sendMessage(disenroll, this.studentID, studentState);
+                    complete(false);
+            	}
+            	else{
+            		((CoursePrivateState)this.actorState).addRegStudent(this.studentID);
+            		complete(true);
+            	}
+            }else {complete(false); }//for later if necessary tracking.
+            currentPhase.countDown();
         });        
         return;	
 	}
