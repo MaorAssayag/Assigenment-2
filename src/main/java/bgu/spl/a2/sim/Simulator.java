@@ -17,7 +17,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import bgu.spl.a2.Action;
 import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
 import bgu.spl.a2.sim.actions.AddStudent;
@@ -193,29 +192,31 @@ public class Simulator {
     		break;
     		
     		case "Register With Preferences":{
-    			//
+    			//TODO
     		}
     		break;
     		
     		case "Unregister":{
-    			
-    		}
-    		break;
-    		
-    		case "End Registeration":{
-    			
-    		}
-    		break;
-    		
-    		case "Administrative Check":{
-    			
+    			String studentID = currentAction.get("Student").getAsString();
+    			String course = currentAction.get("Course").getAsString();
+    			if (!actorThreadPool.getActors().containsKey(course)){
+					return;}//there is no such course in the system
+    			unRegister un = new unRegister(course, studentID, currentPhase);
+    			actorThreadPool.submit(un, course, actorThreadPool.getPrivateState(course));
     		}
     		break;
     		
     		case "Close Course":{
     			
     		}
+    		break;  
+    		
+    		case "Administrative Check":{
+    			
+    		}
     		break;
+    		
+    		
     	}
     }
 	
