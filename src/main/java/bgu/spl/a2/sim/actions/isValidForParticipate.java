@@ -19,6 +19,14 @@ public class isValidForParticipate extends Action<Boolean> {
 	String courseName;
 	int grade;
 	
+	public isValidForParticipate(List<String> prequisites, String courseName, int grade) {
+        this.Result = new Promise<Boolean>();
+        this.prequisites = prequisites;
+        this.courseName = courseName;
+        this.grade = grade;
+        setActionName("is Valid For Participate");
+	}
+
 	@Override
 	protected void start() { 
 		this.actorState.addRecord(getActionName());
@@ -30,17 +38,11 @@ public class isValidForParticipate extends Action<Boolean> {
                 break;
             }
         }
+        if (isValid) { //update student grade's with this new course !
+        	((StudentPrivateState)this.actorState).addGrades(this.actorId,this.grade);
+        }
         this.complete(isValid);
 	}
-	
-	public isValidForParticipate(List<String> prequisites, String courseName, int grade) {
-        this.Result = new Promise<Boolean>();
-        this.prequisites = prequisites;
-        this.courseName = courseName;
-        this.grade = grade;
-        setActionName("is Valid For Participate");
-	}
-
 	/*
 	 * End Of File.
 	 */
