@@ -33,6 +33,7 @@ public class Simulator {
 
 	public static ActorThreadPool actorThreadPool;
 	public static JsonObject currentJsonObject;
+	public static Warehouse warehouse;
 	
 	
 	/**
@@ -42,7 +43,7 @@ public class Simulator {
     	//0. get the computers array and add them to a new warehouse.
     	//
     	JsonArray computers = currentJsonObject.getAsJsonArray("Computers");
-    	Warehouse warehouse = new Warehouse(computers.size());
+    	warehouse = new Warehouse(computers.size());
     	for (int i = 0; i < computers.size(); i++) {
 			JsonObject data = computers.get(i).getAsJsonObject();
 			Computer currentComputer = new Computer(data.get("Type").getAsString());
@@ -166,7 +167,7 @@ public class Simulator {
 				}else{
 					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
 				}
-				AddStudent add = new AddStudent(studentID, currentPhase);
+				AddStudent add = new AddStudent(studentID,currentPhase);
 				actorThreadPool.submit(add, department, departmentState);
     		}
     		break;
@@ -177,8 +178,9 @@ public class Simulator {
     			int grade = currentAction.get("Grade").getAsJsonArray().get(0).getAsInt();
 				if (!actorThreadPool.getActors().containsKey(course)){
 					return;}//there is no such course in the system
-				ParticipateInCourse praticipate = new ParticipateInCourse(studentID, grade,currentPhase);
-				actorThreadPool.submit(praticipate, course, actorThreadPool.getPrivateState(course));    			
+				ParticipateInCourse praticipate = new ParticipateInCourse(studentID, grade);
+				actorThreadPool.submit(praticipate, course, actorThreadPool.getPrivateState(course)); 
+				praticipate.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
     		
@@ -187,8 +189,9 @@ public class Simulator {
     			String course = currentAction.get("Course").getAsString();
     			if (!actorThreadPool.getActors().containsKey(course)){
 					return;}//there is no such course in the system
-    			addSpace add = new addSpace(course, num, currentPhase);
-    			actorThreadPool.submit(add, course, actorThreadPool.getPrivateState(course));
+    			addSpace addspace = new addSpace(course, num);
+    			actorThreadPool.submit(addspace, course, actorThreadPool.getPrivateState(course));
+    			addspace.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
     		
@@ -203,8 +206,9 @@ public class Simulator {
     			if (!actorThreadPool.getActors().containsKey(course)){
 					return; //there is no such course in the system
 				}
-    			unRegister un = new unRegister(course, studentID, currentPhase);
+    			unRegister un = new unRegister(course, studentID);
     			actorThreadPool.submit(un, course, actorThreadPool.getPrivateState(course));
+    			un.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
     		
@@ -217,17 +221,33 @@ public class Simulator {
 				if (!actorThreadPool.getActors().containsKey(course)){
 					return; //there is no such course in the system
 				}
-				closeCourse close = new closeCourse(course, currentPhase);
+				closeCourse close = new closeCourse(course);
 				actorThreadPool.submit(close, department, actorThreadPool.getPrivateState(department));
+				close.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;  
     		
     		case "Administrative Check":{
-    			//TODO
+    			String department = currentAction.get("Department").getAsString();
+				if (!actorThreadPool.getActors().containsKey(department)){
+					return; //there is no such department in the system
+				}
+				String computer = currentAction.get("Computer").getAsString();
+		    	JsonArray studentsJsonArray = currentAction.getAsJsonArray("Students");
+				String[] studentsArray = new String[studentsJsonArray.size()];
+				for (int i = 0; i < studentsArray.length; i++) {
+					studentsArray[i] = studentsJsonArray.get(i).getAsString();
+				}
+				JsonArray coursesJsonArray = currentAction.getAsJsonArray("Conditions");
+				LinkedList<String> coursesList = new LinkedList<String>();
+				for (int i = 0; i < coursesJsonArray.size(); i++) {
+					coursesList.add(coursesJsonArray.get(i).getAsString());
+				}
+				CheckObligations checkObligations = new CheckObligations(studentsArray, coursesList, warehouse, computer);
+				actorThreadPool.submit(checkObligations, department, actorThreadPool.getPrivateState(department));
+				checkObligations.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
-    		break;
-    		
-    		
+    		break;	
     	}
     }
 	
