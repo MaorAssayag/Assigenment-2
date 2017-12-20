@@ -57,7 +57,7 @@ public class CoursePrivateState extends PrivateState{
 	}
 
 
-	private void setRegistered(Integer registered) {
+	public void setRegistered(Integer registered) {
 		this.registered = registered;
 	}
 
