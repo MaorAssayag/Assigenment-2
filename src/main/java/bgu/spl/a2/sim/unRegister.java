@@ -1,7 +1,6 @@
 package bgu.spl.a2.sim;
 
 import java.util.LinkedList;
-import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
@@ -17,12 +16,10 @@ import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 public class unRegister extends Action<Boolean>{
 	String course;
 	String studentID;
-	CountDownLatch currentPhase;
 
-	public unRegister(String course, String studentID, CountDownLatch currentPhase) {
+	public unRegister(String course, String studentID) {
 		this.course = course;
 		this.studentID = studentID;
-		this.currentPhase = currentPhase;
 		this.Result = new Promise<Boolean>();
 		this.setActionName("Unregister");
 	}
@@ -32,7 +29,7 @@ public class unRegister extends Action<Boolean>{
 		this.actorState.addRecord(getActionName());
 		StudentPrivateState studentState = (StudentPrivateState)pool.getPrivateState(this.studentID);
 		if (studentState==null) {
-			currentPhase.countDown();
+			this.complete(false);
 			return;
 		}
         Action<Boolean> disenroll = new disEnroll(this.actorId); // will remove the grade of this course from student, if exsit.
@@ -42,7 +39,6 @@ public class unRegister extends Action<Boolean>{
         then(temp, ()->{
             ((CoursePrivateState)this.actorState).RemoveStudent(this.studentID); // will increase the avaliable spot by 1, if the sutdent was reg.
             complete(true);
-            currentPhase.countDown();
         });	
 	}
 	/*

@@ -4,7 +4,6 @@
 package bgu.spl.a2.sim.actions;
 
 import java.util.LinkedList;
-import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
@@ -20,12 +19,10 @@ import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
  */
 public class closeCourse extends Action<Boolean>{
 
-	CountDownLatch currentPhase;
 	String course;
 	
-	public closeCourse(String course, CountDownLatch currentPhase) {
+	public closeCourse(String course) {
 		this.course = course;
-		this.currentPhase = currentPhase;
 		this.Result = new Promise<Boolean>();
 		this.setActionName("Close Course");
 	}
@@ -40,12 +37,11 @@ public class closeCourse extends Action<Boolean>{
             temp.add(terminate);
         } 
         else { 
-        	currentPhase.countDown();
+        	complete(false);
         	return;
         }
         then(temp, ()->{
             ((DepartmentPrivateState)this.actorState).getCourseList().remove(course);
-            currentPhase.countDown();
             complete(true);
         });
 	}

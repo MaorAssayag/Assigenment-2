@@ -2,7 +2,6 @@ package bgu.spl.a2.sim.actions;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
@@ -15,15 +14,13 @@ import bgu.spl.a2.sim.privateStates.StudentPrivateState;
  * course to the grades sheet of the student, and give him a grade if supplied. See the input example.
  */
 public class ParticipateInCourse extends Action<Boolean> {
-    private CountDownLatch currentPhase;
     private int grade;
     private String studentID;
     
 
-	public ParticipateInCourse(String studentID, int grade, CountDownLatch currentPhase) {
+	public ParticipateInCourse(String studentID, int grade) {
 		this.grade = grade;
 		this.studentID = studentID;
-		this.currentPhase = currentPhase;
 		this.Result = new Promise<Boolean>();
 		this.setActionName("Participate In Course");
 	}
@@ -32,12 +29,12 @@ public class ParticipateInCourse extends Action<Boolean> {
 	protected void start() {
 		this.actorState.addRecord(getActionName());
         if (((CoursePrivateState)actorState).getAvailableSpots() == 0){ //there is no available space in this course.
-        	currentPhase.countDown();
+        	this.complete(false);
             return;
         }
         StudentPrivateState studentState = (StudentPrivateState)this.pool.getPrivateState(this.studentID);
         if (studentState == null) { // the student isn't in the system.
-        	currentPhase.countDown();
+        	this.complete(false);
         	return;
         }
         
@@ -50,18 +47,17 @@ public class ParticipateInCourse extends Action<Boolean> {
         then(temp,()->{ //still in the course Actor
             if (result.get().booleanValue()) { // then the student registration is valid.
             	if (((CoursePrivateState)this.actorState).getAvailableSpots().intValue() == 0) {
-                    Action<Boolean> disenroll = new disEnroll(this.actorId);
+                    Action<Boolean> disenroll = new disEnroll(this.actorId); //remove the grade of this course from the student
                     sendMessage(disenroll, this.studentID, studentState);
-                    complete(false);
+                    this.complete(false);
             	}
             	else{
             		((CoursePrivateState)this.actorState).addRegStudent(this.studentID);
-            		complete(true);
+            		this.complete(true);
             	}
-            }else {complete(false); }//for later if necessary tracking.
-            currentPhase.countDown();
+            }
+            else {this.complete(false); }//for later if necessary tracking.
         });        
-        return;	
 	}
 	
 	/*

@@ -1,7 +1,6 @@
 package bgu.spl.a2.sim.actions;
 
 import java.util.LinkedList;
-import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
@@ -29,7 +28,7 @@ public class Terminator extends Action<Boolean>{
             return;
         }
         for (String student: ((CoursePrivateState)this.actorState).getRegStudents()){
-            unRegister unregister = new unRegister(this.actorId, student, new CountDownLatch(1));
+            unRegister unregister = new unRegister(this.actorId, student);
             sendMessage(unregister, this.actorId, this.actorState);
             temp.add(unregister);
         }

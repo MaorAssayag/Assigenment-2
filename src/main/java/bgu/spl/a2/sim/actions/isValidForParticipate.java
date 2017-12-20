@@ -2,7 +2,6 @@ package bgu.spl.a2.sim.actions;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
@@ -14,7 +13,6 @@ import bgu.spl.a2.sim.privateStates.StudentPrivateState;
  */
 public class isValidForParticipate extends Action<Boolean> {
 
-	CountDownLatch currentPhase;
 	List<String> prequisites;
 	String courseName;
 	int grade;

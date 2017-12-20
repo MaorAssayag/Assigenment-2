@@ -1,7 +1,5 @@
 package bgu.spl.a2.sim.actions;
 
-import java.util.concurrent.CountDownLatch;
-
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.CoursePrivateState;
@@ -10,12 +8,10 @@ public class addSpace extends Action<Boolean> {
 
 	String course;
 	int numToAdd;
-	CountDownLatch currentPhase;
 	
-	public addSpace(String course, int num, CountDownLatch currentPhase) {
+	public addSpace(String course, int num) {
 		this.course = course;
 		this.numToAdd = num;
-		this.currentPhase = currentPhase;
 		this.Result = new Promise<Boolean>();
 		this.setActionName("Add Spaces");
 	}
@@ -30,7 +26,6 @@ public class addSpace extends Action<Boolean> {
        }else {
     	   this.complete(false);
        }
-       currentPhase.countDown(); // this action if finished.
 	}
 
 	/*
