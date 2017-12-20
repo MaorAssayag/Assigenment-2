@@ -6,8 +6,8 @@ import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 
-/*
- * this is aid class for register/unregister for a cousre. this action will be called for student Actor.
+/**
+ * this is aid class for register/unregister for a cousre; this action will be called for student Actor.
  */
 public class disEnroll extends Action<Boolean>{
 
@@ -21,8 +21,8 @@ public class disEnroll extends Action<Boolean>{
 	
 	@Override
 	protected void start() {
-        HashMap<String,Integer> grades = ((StudentPrivateState)this.actorState).getGrades();
-        grades.remove(course);
+        HashMap<String,Integer> gradeSheet = ((StudentPrivateState)this.actorState).getGrades();
+        gradeSheet.remove(this.course);
         complete(true);
 	}
 	/*

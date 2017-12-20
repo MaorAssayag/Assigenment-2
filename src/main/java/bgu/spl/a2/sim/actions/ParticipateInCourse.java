@@ -10,7 +10,7 @@ import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 
 /**
- * Assignment doc - Action no.3;
+ * Assignment doc - Action no.3; this action will be called from course Actor.
  * This action should try to register the student in the course, if it succeeds, should add the
  * course to the grades sheet of the student, and give him a grade if supplied. See the input example.
  */

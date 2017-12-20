@@ -9,7 +9,7 @@ import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 
 /**
- * Aid class for Participate in course Action.
+ * Aid class for Participate in course Action; this action will be called from student Actor.
  * This action should try to register the student in the course, if it succeeds, should resolve with true.
  */
 public class isValidForParticipate extends Action<Boolean> {
@@ -33,7 +33,7 @@ public class isValidForParticipate extends Action<Boolean> {
 		HashMap<String, Integer>gradeSheet = ((StudentPrivateState)this.actorState).getGrades();
         boolean  isValid = true;
         for(String course : prequisites){
-            if(gradeSheet.get(course) == null || gradeSheet.get(course) < 56){
+            if(gradeSheet.get(course) == null || gradeSheet.get(course) <= 56){
             	isValid = false;
                 break;
             }
