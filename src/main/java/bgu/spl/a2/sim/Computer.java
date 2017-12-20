@@ -38,6 +38,10 @@ public class Computer {
 		this.successSig = successSig;
 	}
 	
+	public SuspendingMutex getSuspendingMutex() {
+		return this.suspendingMutex;
+	}
+	
 	/*
 	 * End of File.
 	 */

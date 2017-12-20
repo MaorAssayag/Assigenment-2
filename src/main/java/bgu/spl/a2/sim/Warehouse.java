@@ -1,5 +1,6 @@
 package bgu.spl.a2.sim;
 
+import bgu.spl.a2.Promise;
 
 /**
  * represents a warehouse that holds a finite amount of computers
@@ -41,4 +42,14 @@ public class Warehouse {
 		return null;
 	}
 	
+	public Promise<Computer> acquireComputer(String computerType){
+		return this.getComputer(computerType).getSuspendingMutex().down();
+	}
+	
+	public void releaseComputer(String computerType){
+		this.getComputer(computerType).getSuspendingMutex().up();
+	}
+	/*
+	 * End Of File.
+	 */
 }
