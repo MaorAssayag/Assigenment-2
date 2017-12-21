@@ -22,7 +22,7 @@ public class ActorThreadPool {
 	
 	private ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>> actorsQueues;
 	private ConcurrentHashMap<String, PrivateState> actorsPrivateStates;
-	private ConcurrentHashMap<String, AtomicBoolean> isTheActorLocked;
+	private ConcurrentHashMap<String, Boolean> isTheActorLocked;
 	private BlockingQueue<Thread> threadsQueue;
 	private VersionMonitor currentVersion;//singelton
 	private AtomicBoolean isRunning;
@@ -42,7 +42,7 @@ public class ActorThreadPool {
 	public ActorThreadPool(int nthreads) {
 		this.actorsQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Action<?>>>(); //Initialize private data members of the pool - we choose not to use diamond operator for clearity.
 		this.actorsPrivateStates = new ConcurrentHashMap<String, PrivateState>();
-		this.isTheActorLocked = new ConcurrentHashMap<String, AtomicBoolean>();
+		this.isTheActorLocked = new ConcurrentHashMap<String, Boolean>();
 		this.threadsQueue = new LinkedBlockingQueue<Thread>(nthreads);
 		this.currentVersion = new VersionMonitor();
 		this.isRunning = new AtomicBoolean(false); // until the start() method will be called
@@ -90,17 +90,18 @@ public class ActorThreadPool {
 	 * @param actorState
 	 *            actor's private state (actor's information)
 	 */
-	public synchronized void submit(Action<?> action, String actorId, PrivateState actorState) {
-		boolean found = this.actorsQueues.containsKey(actorId);
-		if (found) {
-			((ConcurrentLinkedQueue<Action<?>>)this.actorsQueues.get(actorId)).add(action);
-		}else {
-			ConcurrentLinkedQueue<Action<?>> temp = new ConcurrentLinkedQueue<Action<?>>();
-			temp.add(action);
-			this.actorsQueues.put(actorId, temp);
-			this.isTheActorLocked.put(actorId, new AtomicBoolean(false)); //this is a New Actor & he is available.
-			this.actorsPrivateStates.put(actorId, actorState);
+	public void submit(Action<?> action, String actorId, PrivateState actorState) {
+		if (!this.actorsQueues.containsKey(actorId)) {
+			synchronized (this.isTheActorLocked) {
+				if (!this.actorsQueues.containsKey(actorId)) {
+					ConcurrentLinkedQueue<Action<?>> temp = new ConcurrentLinkedQueue<Action<?>>();
+					this.actorsQueues.put(actorId, temp);
+					this.isTheActorLocked.put(actorId, false); //this is a New Actor & he is available.
+					this.actorsPrivateStates.put(actorId, actorState);
+				}
+			}
 		}
+		((ConcurrentLinkedQueue<Action<?>>)this.actorsQueues.get(actorId)).add(action);
 		this.currentVersion.inc();
 	}
 
@@ -115,7 +116,6 @@ public class ActorThreadPool {
 	 *             if the thread that shut down the threads is interrupted
 	 */
 	public void shutdown() throws InterruptedException {
-		System.out.println("shutting down");
 		this.isRunning.set(false);
 		for(Thread t:this.threadsQueue) {
 			t.interrupt(); // Interrupts this thread - maybe.  
@@ -151,15 +151,12 @@ public class ActorThreadPool {
 		while(!Thread.currentThread().isInterrupted()){
 			synchronized(this.isTheActorLocked) {
 				for (String id : this.actorsQueues.keySet()) {
-					if (!this.isTheActorLocked.get(id).getAndSet(true)) { //the actor is free to fetch action's from
-						if (!this.actorsQueues.get(id).isEmpty()) {
-							isBusy = true;
-							curVersion = this.currentVersion.getVersion();
-							currentActorId = id;
-							break;
-						}else {
-							this.isTheActorLocked.get(id).getAndSet(false);
-						}
+					if (!this.isTheActorLocked.get(id) && !this.actorsQueues.get(id).isEmpty()) { //the actor is free to fetch action's from
+						isBusy = true;
+						currentActorId = id;
+						this.isTheActorLocked.put(id, true);
+						curVersion = this.currentVersion.getVersion();
+						break;
 					}
 				}
 			}// free the current actor queue for other threads
@@ -168,13 +165,12 @@ public class ActorThreadPool {
 					currentAction = this.actorsQueues.get(currentActorId).poll();
 					currentAction.handle(this, currentActorId, this.actorsPrivateStates.get(currentActorId));
 				}catch(Exception e) {
-					System.out.println("cant handle");
+					System.out.println("cant handle " + currentAction.getActionName() +" "+ currentActorId );
+					e.printStackTrace();					
 				}
-				this.isTheActorLocked.get(currentActorId).set(false); // free this actor to other threads
+				this.isTheActorLocked.put(currentActorId, false); // free this actor to other threads
 				this.currentVersion.inc();
-				currentAction = null;
 				isBusy = false;
-				currentActorId = "";
 			}
 			else { //isBusy = false
 				try { this.currentVersion.await(curVersion);} 
