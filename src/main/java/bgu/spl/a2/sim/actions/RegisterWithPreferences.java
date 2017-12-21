@@ -28,7 +28,6 @@ public class RegisterWithPreferences extends Action<Boolean>{
 	protected void start() {
 		if (this.courses.isEmpty()){
             this.complete(false);
-            this.actorState.addRecord(getActionName());
             return;
         }
 		if (this.grades.size() < this.courses.size()) { // then the default grade is 1 by definition for each course that missing a grade.
@@ -47,7 +46,6 @@ public class RegisterWithPreferences extends Action<Boolean>{
         this.then(temp,()->{
             if(temp.poll().getResult().get()) {
                 this.complete(true);
-                this.actorState.addRecord(getActionName());
             }else {this.sendMessage(this,this.actorId,this.actorState);}//try again
         });
 		

@@ -118,9 +118,7 @@ public class Simulator {
 	*/
 	public static HashMap<String,PrivateState> end(){
 		HashMap<String,PrivateState> result = actorThreadPool.getActorsHash();
-		try {
-			FileOutputStream fileOutput =  new FileOutputStream("result.ser");
-			ObjectOutputStream objectOutput = new ObjectOutputStream(fileOutput);
+		try(ObjectOutputStream objectOutput = new ObjectOutputStream(new FileOutputStream("result.ser"));) {
 			actorThreadPool.shutdown();
 			objectOutput.writeObject(result);
 		}

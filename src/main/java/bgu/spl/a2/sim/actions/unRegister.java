@@ -25,7 +25,6 @@ public class unRegister extends Action<Boolean>{
 	
 	@Override
 	protected void start() {	
-		this.actorState.addRecord(getActionName());
 		StudentPrivateState studentState = (StudentPrivateState)pool.getPrivateState(this.studentID);
 		if (studentState==null) {
 			this.complete(false);

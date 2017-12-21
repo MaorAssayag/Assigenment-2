@@ -27,7 +27,6 @@ public class ParticipateInCourse extends Action<Boolean> {
 	
 	@Override
 	protected void start() {
-		this.actorState.addRecord(getActionName());
         if (((CoursePrivateState)actorState).getAvailableSpots() == 0){ //there is no available space in this course.
         	this.complete(false);
             return;

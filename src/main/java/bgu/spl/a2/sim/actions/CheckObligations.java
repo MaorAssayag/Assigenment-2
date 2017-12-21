@@ -52,7 +52,6 @@ public class CheckObligations extends Action<Boolean> {
 				}
                 this.then(temp, () -> { 
                     this.warehouse.releaseComputer(this.computer); // will release this computer using up() in his mutex.
-                    this.actorState.addRecord(getActionName());
                     this.complete(true);
                 });
             }; 

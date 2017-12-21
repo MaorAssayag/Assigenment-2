@@ -29,7 +29,6 @@ public class AddStudent extends Action<Boolean> {
     protected void start() {
     	if (((DepartmentPrivateState)this.actorState).getStudentList().contains(studentID)) {
     		this.complete(false);
-    		this.actorState.addRecord(getActionName());
     		return;
     	}
     	List<Action<Boolean>> temp = new ArrayList<>();
@@ -41,7 +40,6 @@ public class AddStudent extends Action<Boolean> {
         	if(temp.get(0).getResult().get() && ((DepartmentPrivateState)this.actorState).AddStudent(studentID)) { // true if there was a change in the list
         		this.complete(true);
          	}else { this.complete(false);}
-        	this.actorState.addRecord(getActionName());
         	this.currentPhase.countDown();
     	});
     	

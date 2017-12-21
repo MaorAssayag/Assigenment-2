@@ -32,7 +32,6 @@ public class OpenANewCourse extends Action<Boolean> {
     protected void start() {
         if (((DepartmentPrivateState)this.actorState).getCourseList().contains(this.courseName)) {
             this.complete(false);
-            this.actorState.addRecord(getActionName());
             return;
         }
     	
@@ -45,10 +44,8 @@ public class OpenANewCourse extends Action<Boolean> {
             if(temp.get(0).getResult().get()){
                 ((DepartmentPrivateState)this.actorState).AddCourse(this.courseName);
                 this.complete(true);
-                this.actorState.addRecord(getActionName());
             }else {
                 this.complete(false);
-                this.actorState.addRecord(getActionName());
             }	
     	});
     }

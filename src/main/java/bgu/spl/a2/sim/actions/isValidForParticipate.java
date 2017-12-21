@@ -27,7 +27,6 @@ public class isValidForParticipate extends Action<Boolean> {
 
 	@Override
 	protected void start() { 
-		this.actorState.addRecord(getActionName());
 		HashMap<String, Integer>gradeSheet = ((StudentPrivateState)this.actorState).getGrades();
         boolean  isValid = true;
         for(String course : prequisites){
