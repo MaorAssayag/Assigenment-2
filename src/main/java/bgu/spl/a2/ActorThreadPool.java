@@ -65,8 +65,7 @@ public class ActorThreadPool {
 	 * @return actors
 	 */
 	public HashMap<String, PrivateState> getActorsHash(){
-		HashMap<String, PrivateState> ans = new HashMap<String, PrivateState>();
-		ans.putAll(this.actorsPrivateStates);
+		HashMap<String, PrivateState> ans = new HashMap<String, PrivateState>(getActors());
 		return ans;
 	}
 	
