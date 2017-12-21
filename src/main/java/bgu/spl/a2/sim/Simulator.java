@@ -20,10 +20,13 @@ import com.google.gson.JsonObject;
 import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
 import bgu.spl.a2.sim.actions.AddStudent;
+import bgu.spl.a2.sim.actions.CheckObligations;
 import bgu.spl.a2.sim.actions.OpenANewCourse;
 import bgu.spl.a2.sim.actions.ParticipateInCourse;
+import bgu.spl.a2.sim.actions.RegisterWithPreferences;
 import bgu.spl.a2.sim.actions.addSpace;
 import bgu.spl.a2.sim.actions.closeCourse;
+import bgu.spl.a2.sim.actions.unRegister;
 import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
@@ -196,7 +199,20 @@ public class Simulator {
     		break;
     		
     		case "Register With Preferences":{
-    			//TODO
+                String studentID = currentAction.get("Student").getAsString();
+                LinkedList<String> preferences = new LinkedList<>();
+                Iterator<JsonElement> it = currentAction.get("Preferences").getAsJsonArray().iterator();
+                while (it.hasNext())
+                    preferences.add(it.next().getAsString());
+
+                LinkedList<Integer> grades = new LinkedList<>();
+                it = currentAction.get("Grade").getAsJsonArray().iterator();
+                while (it.hasNext())
+                    grades.add(it.next().getAsInt());
+                
+                RegisterWithPreferences regWithPre = new RegisterWithPreferences(preferences,grades);
+                actorThreadPool.submit(regWithPre, studentID, actorThreadPool.getPrivateState(studentID));
+                regWithPre.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
     		
