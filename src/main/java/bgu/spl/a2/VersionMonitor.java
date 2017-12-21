@@ -22,7 +22,7 @@ public class VersionMonitor {
 	private AtomicInteger version = new AtomicInteger(0);
 	
     public synchronized int getVersion() { //a Thread can't change the version value throw this methods, it doesn't need to be synchronize.
-        return version.get();
+        return this.version.intValue();
     }
 
     public synchronized void inc() { // only 1 Thread at a time can change the value of version.

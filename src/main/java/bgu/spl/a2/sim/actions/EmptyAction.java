@@ -2,6 +2,7 @@ package bgu.spl.a2.sim.actions;
 
 import java.util.concurrent.CountDownLatch;
 import bgu.spl.a2.Action;
+import bgu.spl.a2.Promise;
 
 
 /**
@@ -16,9 +17,12 @@ public class EmptyAction extends Action<Boolean> {
 	@Override
 	protected void start() { 
 		currentPhase.countDown();
+		this.complete(true);
 	}
 	
 	public EmptyAction(CountDownLatch currentPhase) {
 		this.currentPhase = currentPhase;
+		this.Result = new Promise<Boolean>();
+		this.setActionName("Empty Action - aid");
 	}
 }

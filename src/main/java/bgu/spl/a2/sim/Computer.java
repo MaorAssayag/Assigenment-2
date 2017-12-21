@@ -24,10 +24,10 @@ public class Computer {
 	 */
 	public long checkAndSign(List<String> courses, Map<String, Integer> coursesGrades){
 		for(String currentCourse: courses) {
-			if (coursesGrades.get(currentCourse) == null || coursesGrades.get(currentCourse) < 56) 
-				return failSig;
+			if (!(coursesGrades.containsKey(currentCourse))|| coursesGrades.get(currentCourse) <= 56) 
+				return this.failSig;
 		}
-		return successSig;
+		return this.successSig;
 	}
 	
 	public void setFailSig (long failSig) {

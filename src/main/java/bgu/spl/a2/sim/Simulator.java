@@ -6,7 +6,9 @@
 package bgu.spl.a2.sim;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,12 +23,14 @@ import bgu.spl.a2.ActorThreadPool;
 import bgu.spl.a2.PrivateState;
 import bgu.spl.a2.sim.actions.AddStudent;
 import bgu.spl.a2.sim.actions.CheckObligations;
+import bgu.spl.a2.sim.actions.EmptyAction;
 import bgu.spl.a2.sim.actions.OpenANewCourse;
 import bgu.spl.a2.sim.actions.ParticipateInCourse;
 import bgu.spl.a2.sim.actions.RegisterWithPreferences;
 import bgu.spl.a2.sim.actions.addSpace;
 import bgu.spl.a2.sim.actions.closeCourse;
 import bgu.spl.a2.sim.actions.unRegister;
+import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 import bgu.spl.a2.sim.privateStates.DepartmentPrivateState;
 
 /**
@@ -54,6 +58,7 @@ public class Simulator {
 			currentComputer.setSuccessSig(data.get("Sig Success").getAsLong());
 			warehouse.addComputer(currentComputer);
 		}
+    	System.out.println("Phase 0 finished.");
     	
     	//1. Phase 1 - An array of all the open courses actions, and some other action might appear. All the actions
     	// in Phase 1 should be completed before proceeding to Phase 2.
@@ -66,6 +71,7 @@ public class Simulator {
     	}
     	try {phase1.await();}
     	catch (InterruptedException e) {} // phase 1 is done.
+    	System.out.println("Phase 1 finished.");
     	
     	//2. Phase 2 - An array of all the open courses actions, and some other action might appear. All the actions
     	//  in Phase 2 should be completed before proceeding to Phase 3.
@@ -77,16 +83,22 @@ public class Simulator {
     	}
     	try {phase2.await();}
     	catch (InterruptedException e) {} // phase 2 is done.
+    	System.out.println("Phase 2 finished.");
     	
-    	//2. Phase 3 - An array of all the open courses actions, and some other action might appear. All the actions
+    	
+    	//3. Phase 3 - An array of all the open courses actions, and some other action might appear. All the actions
     	// in Phase 3 should be completed before proceeding to Phase 3.
     	actions = currentJsonObject.getAsJsonArray("Phase 3");
-    	CountDownLatch phase3 = new CountDownLatch(actions.size());
+    	CountDownLatch phase3 = new CountDownLatch(actions.size()); 	
     	for (int i = 0; i < actions.size(); i++) {
 			JsonObject data = actions.get(i).getAsJsonObject();
-			addAction(data , phase3); // phase3 countDownLatch currently not in use.
-    	}   
+			addAction(data ,phase3); // phase3 countDownLatch currently not in use.
+    	} 
+    	try {phase3.await();}
+    	catch (InterruptedException e) {} // phase 3 is done.
+    	System.out.println("Phase 3 finished.");
     	
+    	//4. end the simulator.
     	end(); // end simulator.
     }
     
@@ -105,29 +117,31 @@ public class Simulator {
 	* returns list of private states
 	*/
 	public static HashMap<String,PrivateState> end(){
-		try {
+		HashMap<String,PrivateState> result = actorThreadPool.getActorsHash();
+		try(ObjectOutputStream objectOutput = new ObjectOutputStream(new FileOutputStream("result.ser"));) {
 			actorThreadPool.shutdown();
-			return actorThreadPool.getActorsHash();
+			objectOutput.writeObject(result);
 		}
-		catch(Exception e) {}
-		return null;
-
+		catch(FileNotFoundException e) {System.out.println("C'ant find the file ! ");}
+		catch(Exception ex) {}
+		System.out.println("simulator finished !");
+		return new HashMap<>(result);
 	}
 	
 	/**
-	*main method.
+	* main method.
 	*
 	*/
-	public static int main(String [] args){
+	public static void main(String [] args){
 		BufferedReader bufferedReader = null;
-		try { bufferedReader = new BufferedReader(new FileReader(args[0]));} // WARNING : need to check this
+		//try { bufferedReader = new BufferedReader(new FileReader(args[0]));} // WARNING : need to check this
+		try { bufferedReader = new BufferedReader(new FileReader("C:\\Users\\MaorA\\Desktop\\test.json"));} // WARNING : need to check this
 		catch (FileNotFoundException e) { System.out.println("File Not Found at:" + args[0]); }
 		currentJsonObject = new Gson().fromJson(bufferedReader, JsonObject.class);
 		
 		int threadsNum = currentJsonObject.get("threads").getAsInt(); //threadsNum:=how many threads to run.
 		attachActorThreadPool(new ActorThreadPool(threadsNum));
 		start();
-		return 0;
 	}
 	
     /**
@@ -135,7 +149,6 @@ public class Simulator {
      */
     public static void addAction(JsonObject currentAction, CountDownLatch currentPhase) {
     	String actionType = currentAction.get("Action").getAsString();
-    	//TODO : finish all actions
     	switch (actionType) {
     		case "Open Course":{
     			String department = currentAction.get("Department").getAsString();
@@ -149,29 +162,29 @@ public class Simulator {
                 DepartmentPrivateState departmentState; 
 				if (!actorThreadPool.getActors().containsKey(department)){
 					departmentState = new DepartmentPrivateState();
-					actorThreadPool.submit(null, department, departmentState);
+					CountDownLatch tempForAction = new CountDownLatch(1);
+					actorThreadPool.submit(new EmptyAction(tempForAction), department, departmentState);
+			    	try {tempForAction.await();}
+			    	catch (InterruptedException e) {} // department has been added.
 				}else{
 					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
 				}
-                OpenANewCourse open = new OpenANewCourse(space, course, prerequisites,currentPhase);
+                OpenANewCourse open = new OpenANewCourse(space, course, prerequisites);
                 actorThreadPool.submit(open, department, departmentState);  //will call the handle function for 'open'
+                open.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
     		
     		case "Add Student":{
     			String department = currentAction.get("Department").getAsString();
     			String studentID = currentAction.get("Student").getAsString();
-    			
-                //department State handle
-                DepartmentPrivateState departmentState; 
-				if (!actorThreadPool.getActors().containsKey(department)){
-					departmentState = new DepartmentPrivateState();
-					actorThreadPool.submit(null, department, departmentState);
-				}else{
-					departmentState = (DepartmentPrivateState)actorThreadPool.getPrivateState(department);
-				}
+
 				AddStudent add = new AddStudent(studentID,currentPhase);
-				actorThreadPool.submit(add, department, departmentState);
+				if (!actorThreadPool.getActors().containsKey(department)){
+					actorThreadPool.submit(add, department, new DepartmentPrivateState());
+				}else{
+					actorThreadPool.submit(add, department, (DepartmentPrivateState)actorThreadPool.getPrivateState(department));
+				}
     		}
     		break;
     		
@@ -180,9 +193,10 @@ public class Simulator {
     			String course = currentAction.get("Course").getAsString();
     			int grade = currentAction.get("Grade").getAsJsonArray().get(0).getAsInt();
 				if (!actorThreadPool.getActors().containsKey(course)){
+					currentPhase.countDown();
 					return;}//there is no such course in the system
 				ParticipateInCourse praticipate = new ParticipateInCourse(studentID, grade);
-				actorThreadPool.submit(praticipate, course, actorThreadPool.getPrivateState(course)); 
+				actorThreadPool.submit(praticipate, course, (CoursePrivateState)actorThreadPool.getPrivateState(course)); 
 				praticipate.getResult().subscribe(() -> {currentPhase.countDown();});
     		}
     		break;
@@ -191,6 +205,7 @@ public class Simulator {
     			int num = currentAction.get("Number").getAsInt();
     			String course = currentAction.get("Course").getAsString();
     			if (!actorThreadPool.getActors().containsKey(course)){
+    				currentPhase.countDown();
 					return;}//there is no such course in the system
     			addSpace addspace = new addSpace(course, num);
     			actorThreadPool.submit(addspace, course, actorThreadPool.getPrivateState(course));
@@ -220,6 +235,7 @@ public class Simulator {
     			String studentID = currentAction.get("Student").getAsString();
     			String course = currentAction.get("Course").getAsString();
     			if (!actorThreadPool.getActors().containsKey(course)){
+    				currentPhase.countDown();
 					return; //there is no such course in the system
 				}
     			unRegister un = new unRegister(course, studentID);
@@ -231,10 +247,13 @@ public class Simulator {
     		case "Close Course":{
 				String department = currentAction.get("Department").getAsString();
 				if (!actorThreadPool.getActors().containsKey(department)){
+					currentPhase.countDown();
 					return; //there is no such department in the system
 				}
 				String course = currentAction.get("Course").getAsString();
 				if (!actorThreadPool.getActors().containsKey(course)){
+					currentPhase.countDown();
+					System.out.println("count down -1 from  :" + currentPhase.getCount());
 					return; //there is no such course in the system
 				}
 				closeCourse close = new closeCourse(course);
@@ -246,6 +265,7 @@ public class Simulator {
     		case "Administrative Check":{
     			String department = currentAction.get("Department").getAsString();
 				if (!actorThreadPool.getActors().containsKey(department)){
+					currentPhase.countDown();
 					return; //there is no such department in the system
 				}
 				String computer = currentAction.get("Computer").getAsString();

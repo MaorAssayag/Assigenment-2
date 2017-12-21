@@ -1,6 +1,5 @@
 package bgu.spl.a2.sim;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import bgu.spl.a2.Promise;
@@ -17,7 +16,7 @@ import bgu.spl.a2.Promise;
 public class SuspendingMutex {
 	private Computer computer;
 	AtomicBoolean isFree;
-	Queue<Promise<Computer>> promiseList;
+	ConcurrentLinkedQueue<Promise<Computer>> promiseList;
 	
 	/**
 	 * Constructor
@@ -26,7 +25,7 @@ public class SuspendingMutex {
 	public SuspendingMutex(Computer computer){
 		this.computer = computer;
 		this.isFree = new AtomicBoolean(true);
-		this.promiseList = new PriorityQueue<Promise<Computer>>();
+		this.promiseList = new ConcurrentLinkedQueue<Promise<Computer>>();
 	}
 	
 	/**
@@ -39,10 +38,13 @@ public class SuspendingMutex {
 		Promise<Computer> promise = new Promise<Computer>();
 		if (this.isFree.getAndSet(false)) {
 			promise.resolve(this.computer);
+			return promise;
 		}
-		else 
-			this.promiseList.add(promise);
+		else this.promiseList.add(promise);
 		
+		if (this.isFree.getAndSet(false)) {
+			this.promiseList.poll().resolve(this.computer);
+		}
 		return promise;
 	}
 	
@@ -51,11 +53,12 @@ public class SuspendingMutex {
 	 * releases a computer which becomes available in the warehouse upon completion
 	 */
 	public void up(){
-		if (this.promiseList.size() > 0) { 
-			if(!this.isFree.getAndSet(true)) { // return false if isFree was false
-				this.promiseList.poll().resolve(this.computer); // resolve the top (oldest) request for acquisition.
-			}
+		if(promiseList.isEmpty()) {
+			this.isFree.set(true);
+			if((!promiseList.isEmpty()) && (this.isFree.compareAndSet(true, false)))
+				this.promiseList.poll().resolve(this.computer);
 		}
+		else this.promiseList.poll().resolve(this.computer);	
 	}
 	
 	/*

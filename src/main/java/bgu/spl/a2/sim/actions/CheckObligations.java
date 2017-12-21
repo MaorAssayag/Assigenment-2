@@ -22,6 +22,7 @@ public class CheckObligations extends Action<Boolean> {
 	String[] students;
 	LinkedList<String> courses;
 	String computer;
+	Promise<Computer> promise;
 	
 	public CheckObligations(String[] students, LinkedList<String> courses, Warehouse warehouse, String computer) {	
 		this.courses = courses;
@@ -34,22 +35,27 @@ public class CheckObligations extends Action<Boolean> {
 	
 	@Override
 	protected void start() {
-        Promise<Computer> promise = this.warehouse.acquireComputer(this.computer);
+		if (this.promise!=null) {
+			this.canBeExecute = true;
+			 sendMessage(this, this.actorId, this.actorState);
+			 return;
+		}
+        this.promise = this.warehouse.acquireComputer(this.computer);
         promise.subscribe(() -> { // only after we get the computer using promise.
+        	this.canBeExecute = true; //for the handle function of this Action (CheckObligations)
             this.callback = ()-> {
                 List<Action<Boolean>> temp = new ArrayList<>();
                 for (int i = 0; i < this.students.length; i++) {
-                    Action<Boolean> updateSignture = new updateSignture(promise.get(), this.courses);
+                    Action<Boolean> updateSignture = new updateSignture(this.promise.get(), this.courses);
                     temp.add(updateSignture);
                     this.sendMessage(updateSignture, this.students[i], (StudentPrivateState)this.pool.getPrivateState(this.students[i]));
 				}
-                this.then(temp, () -> {
+                this.then(temp, () -> { 
                     this.warehouse.releaseComputer(this.computer); // will release this computer using up() in his mutex.
-                    this.complete(true);
                     this.actorState.addRecord(getActionName());
+                    this.complete(true);
                 });
-            };
-            this.canBeExecute = true; //for the handle function of this Action (CheckObligations)
+            }; 
             sendMessage(this, this.actorId, this.actorState);//then the pool will handle this call back -> will execute this.call().
         });
 	}
