@@ -118,24 +118,25 @@ public class Simulator {
 	*/
 	public static HashMap<String,PrivateState> end(){
 		HashMap<String,PrivateState> result = actorThreadPool.getActorsHash();
-		try(ObjectOutputStream objectOutput = new ObjectOutputStream(new FileOutputStream("result.ser"));) {
+		try {
+			ObjectOutputStream objectOutput = new ObjectOutputStream(new FileOutputStream("result.ser"));
 			actorThreadPool.shutdown();
 			objectOutput.writeObject(result);
+			objectOutput.close();
 		}
 		catch(FileNotFoundException e) {System.out.println("C'ant find the file ! ");}
-		catch(Exception ex) {}
+		catch(Exception ex) {System.out.println("problem found" + ex);}
 		System.out.println("simulator finished !");
-		return new HashMap<>(result);
+		return result;
 	}
 	
 	/**
 	* main method.
 	*
 	*/
-	public static void main(String [] args){
+	public static void main(String[] args){
 		BufferedReader bufferedReader = null;
-		//try { bufferedReader = new BufferedReader(new FileReader(args[0]));} // WARNING : need to check this
-		try { bufferedReader = new BufferedReader(new FileReader("C:\\Users\\MaorA\\Desktop\\test.json"));} // WARNING : need to check this
+		try { bufferedReader = new BufferedReader(new FileReader(args[0]));} // WARNING : need to check this
 		catch (FileNotFoundException e) { System.out.println("File Not Found at:" + args[0]); }
 		currentJsonObject = new Gson().fromJson(bufferedReader, JsonObject.class);
 		
