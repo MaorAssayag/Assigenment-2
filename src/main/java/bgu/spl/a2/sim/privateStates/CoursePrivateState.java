@@ -1,5 +1,6 @@
 package bgu.spl.a2.sim.privateStates;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -8,8 +9,12 @@ import bgu.spl.a2.PrivateState;
 /**
  * this class describe course's private state
  */
-public class CoursePrivateState extends PrivateState{
+public class CoursePrivateState extends PrivateState implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Integer availableSpots;
 	private Integer registered;
 	private List<String> regStudents;

@@ -37,7 +37,7 @@ public class isValidForParticipate extends Action<Boolean> {
             }
         }
         if (isValid) { //update student grade's with this new course !
-        	((StudentPrivateState)this.actorState).addGrades(this.actorId,this.grade);
+        	((StudentPrivateState)this.actorState).addGrades(this.courseName,this.grade);
         }
         this.complete(isValid);
 	}

@@ -23,6 +23,6 @@ public class EmptyAction extends Action<Boolean> {
 	public EmptyAction(CountDownLatch currentPhase) {
 		this.currentPhase = currentPhase;
 		this.Result = new Promise<Boolean>();
-		this.setActionName("Empty Action - aid");
+		this.setActionName("Empty Action");
 	}
 }

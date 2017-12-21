@@ -25,7 +25,7 @@ public class OpenANewCourse extends Action<Boolean> {
         this.courseName = courseName;
         this.prequisites = prequisites;
         this.Result = new Promise<Boolean>();
-        setActionName("Open A New Course");
+        setActionName("Open Course");
     }
 
     @Override

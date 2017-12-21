@@ -119,10 +119,10 @@ public class Simulator {
 	public static HashMap<String,PrivateState> end(){
 		HashMap<String,PrivateState> result = actorThreadPool.getActorsHash();
 		try {
-			ObjectOutputStream objectOutput = new ObjectOutputStream(new FileOutputStream("result.ser"));
+			FileOutputStream fileOutput =  new FileOutputStream("result.ser");
+			ObjectOutputStream objectOutput = new ObjectOutputStream(fileOutput);
 			actorThreadPool.shutdown();
 			objectOutput.writeObject(result);
-			objectOutput.close();
 		}
 		catch(FileNotFoundException e) {System.out.println("C'ant find the file ! ");}
 		catch(Exception ex) {System.out.println("problem found" + ex);}
