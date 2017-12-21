@@ -4,7 +4,6 @@ import java.util.LinkedList;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
-import bgu.spl.a2.sim.unRegister;
 import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 
 /**

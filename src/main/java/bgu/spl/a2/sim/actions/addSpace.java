@@ -4,6 +4,10 @@ import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
 import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 
+/**
+* Assignment doc - Action no.2; this action will be called from course Actor.
+* This action should try to add space for students in the course, if it succeeds, should update the available spots.
+*/
 public class addSpace extends Action<Boolean> {
 
 	String course;

@@ -42,7 +42,8 @@ public class ParticipateInCourse extends Action<Boolean> {
         Action<Boolean> isValid = new isValidForParticipate(prequisites,this.actorId,grade);
         List<Action<Boolean>> temp = new LinkedList<Action<Boolean>>();
         temp.add(isValid);//list that contains isValid
-        Promise<Boolean> result = (Promise<Boolean>) sendMessage(isValid,this.studentID,studentState); // return the promise of isValid&insert isValid to the pool.
+        @SuppressWarnings("unchecked") // for elimination of a warning.
+		Promise<Boolean> result = (Promise<Boolean>)this.sendMessage(isValid,this.studentID,studentState); // return the promise of isValid&insert isValid to the pool.
         
         then(temp,()->{ //still in the course Actor
             if (result.get().booleanValue()) { // then the student registration is valid.

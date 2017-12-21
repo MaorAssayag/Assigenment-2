@@ -1,10 +1,9 @@
-package bgu.spl.a2.sim;
+package bgu.spl.a2.sim.actions;
 
 import java.util.LinkedList;
 
 import bgu.spl.a2.Action;
 import bgu.spl.a2.Promise;
-import bgu.spl.a2.sim.actions.disEnroll;
 import bgu.spl.a2.sim.privateStates.CoursePrivateState;
 import bgu.spl.a2.sim.privateStates.StudentPrivateState;
 /*
