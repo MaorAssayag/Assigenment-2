@@ -69,6 +69,10 @@ public class ActorThreadPool {
 		return ans;
 	}
 	
+	public ConcurrentLinkedQueue<Action<?>> getActorQueue(String actorID){
+		return this.actorsQueues.get(actorID);
+	}
+	
 	/**
 	 * getter for actor's private state
 	 * @param actorId actor's id
