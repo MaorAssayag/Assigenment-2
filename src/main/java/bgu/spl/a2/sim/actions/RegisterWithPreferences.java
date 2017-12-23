@@ -33,7 +33,7 @@ public class RegisterWithPreferences extends Action<Boolean>{
 		if (this.grades.size() < this.courses.size()) { // then the default grade is 1 by definition for each course that missing a grade.
 			int i = this.courses.size() - this.grades.size();
 			for (int j = 0; j < i; j++) {
-				this.grades.add(1);
+				this.grades.add(-1);
 			}
 		}
         
