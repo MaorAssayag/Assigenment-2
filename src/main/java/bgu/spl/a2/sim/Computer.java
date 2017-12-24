@@ -30,10 +30,18 @@ public class Computer {
 		return this.successSig;
 	}
 	
+	/**
+	 * set the fail signature of this computer.
+	 * @param failSig - long
+	 */
 	public void setFailSig (long failSig) {
 		this.failSig = failSig;
 	}
 	
+	/**
+	 * set the success signature of this computer.
+	 * @param successSig - long
+	 */
 	public void setSuccessSig (long successSig) {
 		this.successSig = successSig;
 	}

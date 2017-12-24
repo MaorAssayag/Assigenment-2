@@ -2,13 +2,11 @@ package bgu.spl.a2;
 
 
 
-        import java.util.ArrayList;
-        import java.util.List;
-        import java.util.concurrent.CountDownLatch;
+   import java.util.ArrayList;
+   import java.util.List;
+   import java.util.concurrent.CountDownLatch;
 
-/**
- * Created by Lenovo on 12/9/2017.
- */
+
 class confirmation extends Action{
     String clientA;
     String clientB;
@@ -110,13 +108,6 @@ public class BankTest {
             trans3.getResult().subscribe(() -> l.countDown());
             trans4.getResult().subscribe(() -> l.countDown());
             trans5.getResult().subscribe(() -> l.countDown());
-            //  Action<String> trans6 = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
-            //Action<String> trans7 = new Transmission(100,"B","A","bank2","bank1",new PrivateState(){});
-            //Action<String> trans8 = new Transmission(100,"A","B","bank1","bank3",new PrivateState(){});
-            //Action<String> trans9 = new Transmission(100,"A","B","bank3","bank2",new PrivateState(){});
-            //Action<String> trans10 = new Transmission(100,"C","B","bank2","bank3",new PrivateState(){});
-            //Action<String> trans11 = new Transmission(100,"A","B","bank1","bank2",new PrivateState(){});
-
 
             pool.submit(trans, "bank1", new PrivateState() {
             });
