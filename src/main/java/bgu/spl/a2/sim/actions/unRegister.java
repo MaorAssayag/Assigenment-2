@@ -30,6 +30,11 @@ public class unRegister extends Action<Boolean>{
 			this.complete(false);
 			return;
 		}
+		if(!((CoursePrivateState)this.actorState).getRegStudents().contains(this.studentID)) {
+			this.sendMessage(this, this.actorId, this.actorState); //try again later
+			return;
+		}
+		
         Action<Boolean> disenroll = new disEnroll(this.actorId); // will remove the grade of this course from student, if exsit.
         LinkedList<Action<Boolean>> temp = new LinkedList<Action<Boolean>>();
         temp.add(disenroll);

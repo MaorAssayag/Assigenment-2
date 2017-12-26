@@ -31,14 +31,20 @@ public class ParticipateInCourse extends Action<Boolean> {
 	
 	@Override
 	protected void start() {
-        if (((CoursePrivateState)actorState).getAvailableSpots() == 0){ //there is no available space in this course.
-        	this.complete(false);
-            return;
-        }
         StudentPrivateState studentState = (StudentPrivateState)this.pool.getPrivateState(this.studentID);
         if (studentState == null) { // the student isn't in the system.
         	this.complete(false);
         	return;
+        }
+        
+		if(((CoursePrivateState)this.actorState).getRegStudents().contains(this.studentID)) {
+			this.sendMessage(this, this.actorId, this.actorState); //try again later
+			return;
+		}
+		
+        if (((CoursePrivateState)actorState).getAvailableSpots() == 0){ //there is no available space in this course.
+        	this.complete(false);
+            return;
         }
         
         List<String> prequisites = ((CoursePrivateState)actorState).getPrequisites();
@@ -53,7 +59,7 @@ public class ParticipateInCourse extends Action<Boolean> {
             	if (((CoursePrivateState)this.actorState).getAvailableSpots().intValue() == 0) {
                     Action<Boolean> disenroll = new disEnroll(this.actorId); //remove the grade of this course from the student
                     sendMessage(disenroll, this.studentID, studentState);
-                    this.complete(false);
+                    disenroll.getResult().subscribe(()->this.complete(false));
             	}
             	else{
             		((CoursePrivateState)this.actorState).addRegStudent(this.studentID);
