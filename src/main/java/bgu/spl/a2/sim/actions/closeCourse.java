@@ -29,11 +29,10 @@ public class closeCourse extends Action<Boolean>{
 	
 	@Override
 	protected void start() {
-        this.actorState.addRecord(getActionName());
         LinkedList<Action<Boolean>> temp = new LinkedList<Action<Boolean>>();
         if (((DepartmentPrivateState)this.actorState).getCourseList().contains(this.course)){
             Terminator terminate = new Terminator();
-            Promise<Boolean> promise = (Promise<Boolean>) sendMessage(terminate, this.course, (CoursePrivateState)pool.getPrivateState(this.course));
+			this.sendMessage(terminate, this.course, (CoursePrivateState)pool.getPrivateState(this.course));
             temp.add(terminate);
         } 
         else { 
