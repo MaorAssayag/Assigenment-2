@@ -30,17 +30,22 @@ public class RegisterWithPreferences extends Action<Boolean>{
             this.complete(false);
             return;
         }
-		if (this.grades.size() < this.courses.size()) { // then the default grade is 1 by definition for each course that missing a grade.
+		if (this.grades.size() < this.courses.size()) { // then the default grade is -1 by definition for each course that missing a grade.
 			int i = this.courses.size() - this.grades.size();
 			for (int j = 0; j < i; j++) {
 				this.grades.add(-1);
 			}
 		}
-        
+        String tryCourse = this.courses.poll();
+        if(((CoursePrivateState)this.pool.getPrivateState(tryCourse)).getRegStudents().contains(this.actorId)) {
+        	this.sendMessage(this,this.actorId,this.actorState); //try the next course
+        	return;
+        }
+
         LinkedList<Action<Boolean>> temp = new LinkedList<>();
         Action<Boolean> tryReg = new ParticipateInCourse(this.actorId,this.grades.poll()); // ParticipateInCourse get student and grade, will be called from the course actor.
         temp.add(tryReg);
-        String tryCourse = this.courses.poll();
+        
         this.sendMessage(tryReg, tryCourse , (CoursePrivateState)this.pool.getPrivateState(tryCourse));
 
         this.then(temp,()->{
